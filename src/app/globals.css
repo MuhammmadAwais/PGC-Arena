@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   PGC-Arena Design System — Tailwind v4 CSS-based Configuration
+   All tokens injected via @theme (replaces tailwind.config.ts)
+   ============================================================ */
+
+@theme {
+  /* ---------- Color Palette ---------- */
+  --color-pgc-indigo:  #281E5C; /* Base dark / app background         */
+  --color-pgc-navy:    #2D2B6F; /* Surface / cards / modals            */
+  --color-pgc-red:     #E33B29; /* Primary CTA / buzzer / first-blood  */
+  --color-pgc-hover:   #C92F1F; /* Red hover state                     */
+  --color-pgc-surface: #35327D; /* Hover & focus elevation             */
+  --color-pgc-border:  #3B387E; /* Muted borders / secondary text      */
+  --color-pgc-gold:    #F59E0B; /* Trophy / 1st place accent           */
+  --color-pgc-emerald: #10B981; /* Correct answer / ready state        */
+
+  /* ---------- Typography ---------- */
+  --font-sans:           var(--font-inter),        sans-serif;
+  --font-display:        var(--font-chakra-petch),  sans-serif;
+  --font-urdu-sans:      var(--font-noto-sans-arabic), sans-serif;
+  --font-urdu-nastaliq:  var(--font-noto-nastaliq-urdu), serif;
+  --font-arabic:         var(--font-amiri),         serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   Global Base Styles
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background-color: var(--color-pgc-indigo);
+  color: #ffffff;
+  font-family: var(--font-sans);
 }
