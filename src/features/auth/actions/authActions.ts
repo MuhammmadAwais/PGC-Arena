@@ -22,7 +22,7 @@ export async function loginUser(formData: FormData) {
   }
 
   const cookieStore = await cookies();
-  
+
   if (!remember) {
     // Set flag for session-only cookies (expires on browser close)
     cookieStore.set("pgc_remember_me", "false");
@@ -70,4 +70,10 @@ export async function loginUser(formData: FormData) {
     default:
       return { error: "Unknown user role" };
   }
+}
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }
