@@ -60,6 +60,7 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
+      suppressHydrationWarning
       className={[
         chakraPetch.variable,
         inter.variable,
@@ -68,7 +69,10 @@ export default function RootLayout({
         amiri.variable,
       ].join(" ")}
     >
-      <body className="bg-pgc-indigo text-white font-sans antialiased min-h-screen flex flex-col">
+      <body
+        suppressHydrationWarning
+        className="bg-pgc-indigo text-white font-sans antialiased min-h-screen flex flex-col"
+      >
         {children}
       </body>
     </html>
