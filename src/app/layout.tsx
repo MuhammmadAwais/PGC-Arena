@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import {
   Chakra_Petch,
   Inter,
@@ -71,9 +72,25 @@ export default function RootLayout({
     >
       <body
         suppressHydrationWarning
-        className="bg-pgc-indigo text-white font-sans antialiased min-h-screen flex flex-col"
+        className="bg-pgc-indigo text-white font-sans antialiased min-h-screen flex flex-col relative"
       >
-        {children}
+        {/* Global fixed background */}
+        <div className="fixed inset-0 -z-50 bg-black">
+          <Image
+            src="/global-bg.webp"
+            alt="Global background"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-70"
+            quality={85}
+          />
+        </div>
+        
+        {/* Main content layer */}
+        <div className="flex flex-col flex-1 relative z-0">
+          {children}
+        </div>
       </body>
     </html>
   );

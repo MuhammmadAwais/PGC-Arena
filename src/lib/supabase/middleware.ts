@@ -32,10 +32,19 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          
           supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
+          
+          const isSessionOnly = request.cookies.get("pgc_remember_me")?.value === "false";
+          
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // If "Remember me" is disabled, convert to session cookies
+            if (isSessionOnly) {
+              delete options.maxAge;
+              delete options.expires;
+            }
+            supabaseResponse.cookies.set(name, value, options);
+          });
         },
       },
     },

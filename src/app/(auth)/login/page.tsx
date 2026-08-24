@@ -74,18 +74,7 @@ export default function LoginPage() {
           Responsive: full-width on mobile/tablet
          ══════════════════════════════════════════════════════════════ */}
       <div className="flex-1 relative flex flex-col items-center justify-center overflow-y-auto p-6 sm:p-10">
-        {/* Raw dark-texture — zero overlay */}
-        <div className="absolute inset-0 -z-10">
-          <Image
-            src="/auth/login-bg.webp"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 67vw"
-            className="object-cover object-center"
-            quality={85}
-          />
-        </div>
+        {/* Global background provides the dark-texture */}
 
         {/* ── Center container ─────────────────────────────────────── */}
         <div className="w-full max-w-[460px] flex flex-col items-center">

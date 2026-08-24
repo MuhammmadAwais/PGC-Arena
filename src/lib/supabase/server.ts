@@ -27,7 +27,14 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
+            const isSessionOnly = cookieStore.get("pgc_remember_me")?.value === "false";
+            
             cookiesToSet.forEach(({ name, value, options }) => {
+              // If "Remember me" is disabled, convert to session cookies
+              if (isSessionOnly) {
+                delete options.maxAge;
+                delete options.expires;
+              }
               cookieStore.set(name, value, options);
             });
           } catch {

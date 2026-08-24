@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -12,11 +13,22 @@ const loginSchema = z.object({
 export async function loginUser(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const remember = formData.get("remember") === "on";
 
   const result = loginSchema.safeParse({ email, password });
 
   if (!result.success) {
     return { error: result.error.issues[0].message };
+  }
+
+  const cookieStore = await cookies();
+  
+  if (!remember) {
+    // Set flag for session-only cookies (expires on browser close)
+    cookieStore.set("pgc_remember_me", "false");
+  } else {
+    // Clear flag to use default persistent cookies (1 year)
+    cookieStore.delete("pgc_remember_me");
   }
 
   const supabase = await createClient();

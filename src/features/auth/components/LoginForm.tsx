@@ -114,6 +114,24 @@ export function LoginForm() {
           </div>
         </div>
 
+        {/* Remember Me */}
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            id="login-remember"
+            name="remember"
+            type="checkbox"
+            defaultChecked={true}
+            disabled={anyLoading}
+            className="w-4 h-4 rounded border-white/20 bg-black/25 text-pgc-red focus:ring-pgc-red/70 focus:ring-offset-0 focus:ring-2 accent-pgc-red cursor-pointer disabled:opacity-40"
+          />
+          <label
+            htmlFor="login-remember"
+            className="text-[13px] font-medium text-white/70 cursor-pointer select-none"
+          >
+            Remember me
+          </label>
+        </div>
+
         {/* Error */}
         {error && (
           <div

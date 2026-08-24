@@ -4,7 +4,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-pgc-indigo">
+    <div className="flex h-screen">
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-black/20 p-6 flex flex-col">
         <div className="font-display text-2xl font-bold text-white mb-8">

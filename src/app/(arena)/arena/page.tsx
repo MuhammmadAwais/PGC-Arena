@@ -31,7 +31,7 @@ export default async function ArenaDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-pgc-navy p-10 flex flex-col items-center justify-center text-center">
+    <main className="min-h-screen p-10 flex flex-col items-center justify-center text-center">
       <h1 className="text-4xl font-display font-bold text-pgc-gold mb-4">
         Welcome to the Arena - {profile.full_name}
       </h1>
