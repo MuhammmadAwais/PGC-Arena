@@ -51,12 +51,9 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication.
-  // NOTE: /dashboard is temporarily public while auth is not yet wired.
-  //       Remove it from this list once auth Server Actions are implemented.
   const isPublicRoute =
     pathname === "/" ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/dashboard") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/") ||
     pathname.includes(".");

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, Loader2, UserRound } from "lucide-react";
+import { loginUser } from "@/features/auth/actions/authActions";
 
 export function LoginForm() {
   const router = useRouter();
@@ -17,9 +18,14 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setIsLoading(false);
-    router.push("/dashboard");
+
+    const formData = new FormData(e.currentTarget);
+    const result = await loginUser(formData);
+
+    if (result?.error) {
+      setError(result.error);
+      setIsLoading(false);
+    }
   }
 
   async function handleGuest() {
@@ -58,6 +64,7 @@ export function LoginForm() {
           </label>
           <input
             id="login-email"
+            name="email"
             type="email"
             autoComplete="email"
             required
@@ -80,6 +87,7 @@ export function LoginForm() {
           <div className="relative">
             <input
               id="login-password"
+              name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
