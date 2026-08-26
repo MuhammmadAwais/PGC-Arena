@@ -9,12 +9,10 @@ import {
   Trophy,
   Crown,
   Shield,
-  ExternalLink,
   MapPin,
-  Calendar,
-  Sparkles,
 } from "lucide-react";
 import { getSingleCampusData } from "@/features/campus/actions/campusActions";
+import { DetailStudentTable } from "@/features/campus/components/DetailStudentTable";
 
 interface CampusDetailPageProps {
   params: Promise<{ id: string }>;
@@ -47,15 +45,15 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
 
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] font-mono text-slate-300">
-            ID: {campus.id.slice(0, 8)}
+            CAMPUS ID: {campus.id.slice(0, 8)}
           </span>
         </div>
       </div>
 
-      {/* ── 2. Campus Hero Master Banner ────────────────────────── */}
-      <div className="relative rounded-3xl border border-white/10 bg-[#0B0C16] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+      {/* ── 2. Campus Hero Master Banner (Top Featured) ────────── */}
+      <div className="relative rounded-3xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md overflow-hidden shadow-sm">
         {/* Full-width banner background */}
-        <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-r from-pgc-indigo via-pgc-navy to-[#0B0C16]">
+        <div className="relative h-44 sm:h-56 w-full overflow-hidden bg-gradient-to-r from-pgc-indigo/60 via-pgc-navy/80 to-black/60">
           {campus.banner_url ? (
             <img
               src={campus.banner_url}
@@ -69,10 +67,10 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
         </div>
 
         {/* Hero Info Overlay */}
-        <div className="relative px-6 sm:px-8 pb-8 -mt-20 sm:-mt-24 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="relative px-6 sm:px-8 pb-7 -mt-16 sm:-mt-20 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div className="flex items-end gap-5">
             {/* Campus Logo Emblem */}
-            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl bg-black/90 border-2 border-white/20 p-2 shadow-2xl flex items-center justify-center shrink-0 backdrop-blur-md overflow-hidden">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-black/90 border-2 border-white/20 p-2 shadow-2xl flex items-center justify-center shrink-0 backdrop-blur-md overflow-hidden">
               {campus.logo_url ? (
                 <img
                   src={campus.logo_url}
@@ -85,13 +83,13 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
             </div>
 
             {/* Title & Regional Tag */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 font-sans">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full bg-pgc-red/20 border border-pgc-red/40 text-pgc-red text-[10px] font-mono font-bold tracking-wider uppercase">
                   PGC FRANCHISE
                 </span>
                 {campus.region && (
-                  <span className="flex items-center gap-1 text-xs text-slate-300 font-sans font-medium">
+                  <span className="flex items-center gap-1 text-xs text-slate-300 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-cyan-400" />
                     <span>{campus.region} Region</span>
                   </span>
@@ -100,73 +98,96 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
               <h1 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight">
                 {campus.name}
               </h1>
-              <p className="text-xs text-slate-400 font-sans">
+              <p className="text-xs text-slate-400">
                 Official Punjab Group of Colleges regional esports &amp; academic competition division.
               </p>
             </div>
           </div>
 
-          {/* ELO Standing Badge */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="px-4 py-3 rounded-2xl bg-black/60 border border-pgc-gold/30 backdrop-blur-md text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block font-display tracking-wider">
-                Combined ELO Points
+          {/* Regional Manager Preview */}
+          <div className="p-3 px-4 rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-md flex items-center gap-3 shrink-0 font-sans">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-display">
+                Campus Manager
               </span>
-              <span className="font-display font-black text-xl text-pgc-gold flex items-center justify-end gap-1.5">
-                <Trophy className="w-4 h-4 text-pgc-gold" />
-                {totalElo} PTS
+              <span className="text-xs font-bold text-white">
+                {campusManager ? campusManager.full_name : "Unassigned"}
               </span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Quick KPI Counters Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-white/[0.08] bg-white/[0.02] divide-x divide-white/[0.06]">
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Active Squads</p>
-            <p className="font-display font-black text-xl text-white mt-0.5">{campusTeams.length}</p>
+      {/* ── 3. Row 1: Primary Summary Stats Overview Cards (4 Cards) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Active Squads</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-white mt-0.5 tracking-tight">{campusTeams.length}</p>
           </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Faculty Coaches</p>
-            <p className="font-display font-black text-xl text-purple-400 mt-0.5">{campusTeachers.length}</p>
+          <div className="w-10 h-10 rounded-xl bg-pgc-red/15 text-pgc-red flex items-center justify-center">
+            <Flame className="w-5 h-5" />
           </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Enrolled Students</p>
-            <p className="font-display font-black text-xl text-cyan-400 mt-0.5">{campusStudents.length}</p>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Combined ELO</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-pgc-gold mt-0.5 tracking-tight">{totalElo} PTS</p>
           </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Campus Manager</p>
-            <p className="font-display font-bold text-sm text-white truncate mt-1">
-              {campusManager ? campusManager.full_name : "Unassigned"}
-            </p>
+          <div className="w-10 h-10 rounded-xl bg-pgc-gold/15 text-pgc-gold flex items-center justify-center">
+            <Trophy className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Faculty Coaches</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-purple-400 mt-0.5 tracking-tight">{campusTeachers.length}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Enrolled Students</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-cyan-400 mt-0.5 tracking-tight">{campusStudents.length}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+            <Users className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* ── 3. Campus Leadership & Faculty Section ───────────────── */}
+      {/* ── 4. Row 2: Floating Borderless Cards with Glowing Underlines (Faculty & Leadership) ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-            <Shield className="w-5 h-5 text-cyan-400" />
-            <span>Campus Leadership &amp; Faculty</span>
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-cyan-400" />
+            <span>Campus Leadership &amp; Faculty Coaches</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* Manager Profile Card */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+          {/* Manager Floating Underline Card */}
           {campusManager && (
             <Link
               href={`/admin/users/${campusManager.id}`}
-              className="p-4 rounded-2xl bg-[#0B0C16] border border-cyan-500/30 hover:border-cyan-400/60 transition-all flex items-center gap-3.5 group shadow-sm"
+              className="group relative p-4 rounded-2xl bg-gradient-to-b from-white/[0.03] via-cyan-500/[0.02] to-cyan-500/[0.06] border-b-2 border-cyan-400 shadow-[0_6px_20px_-4px_rgba(6,182,212,0.25)] hover:shadow-[0_12px_28px_-4px_rgba(6,182,212,0.4)] hover:-translate-y-0.5 transition-all duration-300 backdrop-blur-md flex items-center gap-3.5"
             >
               {campusManager.avatar_url ? (
                 <img
                   src={campusManager.avatar_url}
                   alt={campusManager.full_name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-cyan-400 shrink-0"
+                  className="w-11 h-11 rounded-full object-cover border-2 border-cyan-400 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-display font-black text-sm shrink-0 border border-cyan-500/30">
+                <div className="w-11 h-11 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-display font-black text-xs shrink-0 border border-cyan-500/30">
                   MGR
                 </div>
               )}
@@ -182,21 +203,21 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
             </Link>
           )}
 
-          {/* Teacher Profile Cards */}
+          {/* Teacher Floating Underline Cards */}
           {campusTeachers.map((teacher) => (
             <Link
               key={teacher.id}
               href={`/admin/users/${teacher.id}`}
-              className="p-4 rounded-2xl bg-[#0B0C16] border border-white/10 hover:border-purple-400/50 transition-all flex items-center gap-3.5 group shadow-sm"
+              className="group relative p-4 rounded-2xl bg-gradient-to-b from-white/[0.03] via-purple-500/[0.02] to-purple-500/[0.06] border-b-2 border-purple-400 shadow-[0_6px_20px_-4px_rgba(168,85,247,0.25)] hover:shadow-[0_12px_28px_-4px_rgba(168,85,247,0.4)] hover:-translate-y-0.5 transition-all duration-300 backdrop-blur-md flex items-center gap-3.5"
             >
               {teacher.avatar_url ? (
                 <img
                   src={teacher.avatar_url}
                   alt={teacher.full_name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-400/60 shrink-0"
+                  className="w-11 h-11 rounded-full object-cover border-2 border-purple-400 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-display font-black text-sm shrink-0 border border-purple-500/30">
+                <div className="w-11 h-11 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-display font-black text-xs shrink-0 border border-purple-500/30">
                   TCH
                 </div>
               )}
@@ -214,53 +235,53 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
         </div>
       </div>
 
-      {/* ── 4. Esports Squads Section ─────────────────────────────── */}
+      {/* ── 5. Secondary Card: Esports Squads Section ───────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-            <Flame className="w-5 h-5 text-pgc-red" />
+          <h2 className="font-display text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <Flame className="w-4 h-4 text-pgc-red" />
             <span>Competitive Esports Squads ({campusTeams.length})</span>
           </h2>
         </div>
 
         {campusTeams.length === 0 ? (
-          <div className="p-12 rounded-2xl border border-white/10 bg-white/[0.01] text-center text-slate-400 font-sans text-xs">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.01] p-8 text-center text-xs text-slate-400 font-sans">
             No active squads registered for this campus yet.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {campusTeams.map((team, idx) => (
               <div
                 key={team.id}
-                className="rounded-2xl border border-white/10 bg-[#0B0C16] hover:border-white/20 transition-all flex flex-col justify-between overflow-hidden shadow-lg group"
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.18] transition-all flex flex-col justify-between overflow-hidden shadow-sm backdrop-blur-md group"
               >
-                {/* Team Banner */}
-                <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-[#171638] to-[#0B0C16]">
+                {/* Team Banner Header */}
+                <div className="relative h-24 w-full overflow-hidden bg-gradient-to-r from-pgc-indigo to-black/80">
                   {team.banner_url ? (
                     <img
                       src={team.banner_url}
                       alt={team.name}
-                      className="w-full h-full object-cover opacity-45 group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full bg-white/[0.03]" />
+                    <div className="w-full h-full bg-white/[0.02]" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C16] via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-                  {/* Header Badge */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded-md bg-black/70 border border-white/10 font-display font-black text-[10px] uppercase tracking-wider text-white">
+                  {/* Badges Overlay */}
+                  <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between text-xs">
+                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 font-display font-black text-[10px] uppercase text-white">
                       SQUAD #{idx + 1}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-black/70 border border-pgc-gold/40 font-display font-black text-xs text-pgc-gold flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-pgc-gold" />
-                      {team.elo_rating} PTS
+                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-pgc-gold/30 font-display font-black text-xs text-pgc-gold flex items-center gap-1">
+                      <Trophy className="w-3 h-3" />
+                      {team.elo_rating ?? 1000} PTS
                     </span>
                   </div>
 
-                  {/* Team Logo */}
+                  {/* Emblem */}
                   <div className="absolute -bottom-3 left-4">
-                    <div className="w-12 h-12 rounded-xl bg-black/90 border-2 border-white/20 flex items-center justify-center overflow-hidden shadow-xl">
+                    <div className="w-12 h-12 rounded-xl bg-black/90 border-2 border-white/20 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
                       {team.logo_url ? (
                         <img src={team.logo_url} alt={team.name} className="w-full h-full object-cover" />
                       ) : (
@@ -270,25 +291,28 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
                   </div>
                 </div>
 
-                {/* Team Details */}
-                <div className="p-5 pt-6 space-y-4">
+                {/* Card Content */}
+                <div className="p-4 pt-5 space-y-3.5">
                   <div>
-                    <h3 className="font-display font-extrabold text-xl text-white tracking-tight">
+                    <Link
+                      href={`/admin/teams/${team.id}`}
+                      className="font-display font-black text-lg text-white hover:text-pgc-red transition-colors block"
+                    >
                       {team.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-sans mt-0.5 font-medium">
-                      {team.members.length} Squad Players
+                    </Link>
+                    <p className="text-xs text-slate-400 font-sans mt-0.5">
+                      {team.member_count} Squad Members Enrolled
                     </p>
                   </div>
 
-                  {/* Captain Block */}
-                  <div className="p-3 rounded-xl bg-black/40 border border-white/[0.08] flex items-center justify-between text-xs font-sans">
+                  {/* Captain Card */}
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between text-xs font-sans">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {team.leader?.avatar_url ? (
                         <img
                           src={team.leader.avatar_url}
                           alt={team.leader.full_name}
-                          className="w-7 h-7 rounded-full object-cover border-2 border-pgc-gold shrink-0"
+                          className="w-7 h-7 rounded-full object-cover border-2 border-pgc-gold/80 shrink-0"
                         />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-pgc-gold/20 flex items-center justify-center text-pgc-gold shrink-0">
@@ -296,54 +320,36 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
                         </div>
                       )}
                       <div className="min-w-0">
-                        <span className="text-[10px] uppercase font-extrabold text-slate-400 block font-display">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block font-display">
                           Team Captain
                         </span>
-                        <span className="font-bold text-sm text-white truncate block">
-                          {team.leader ? team.leader.full_name : "Unassigned"}
-                        </span>
+                        {team.leader ? (
+                          <Link
+                            href={`/admin/users/${team.leader.id}`}
+                            className="font-bold text-sm text-white hover:text-pgc-gold transition-colors truncate block"
+                          >
+                            {team.leader.full_name}
+                          </Link>
+                        ) : (
+                          <span className="font-bold text-sm text-slate-500 block">Unassigned</span>
+                        )}
                       </div>
                     </div>
                     {team.leader?.ign && (
-                      <span className="px-2 py-0.5 rounded bg-white/[0.08] text-xs font-mono text-pgc-gold font-bold">
+                      <span className="px-2 py-0.5 rounded bg-white/[0.06] text-xs font-mono text-pgc-gold font-bold">
                         #{team.leader.ign}
                       </span>
                     )}
                   </div>
-
-                  {/* Roster List */}
-                  <div className="space-y-1.5 font-sans">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Active Players:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {team.members.map((member) => (
-                        <Link
-                          key={member.id}
-                          href={`/admin/users/${member.id}`}
-                          className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                            member.is_team_leader
-                              ? "bg-pgc-gold/10 text-pgc-gold border-pgc-gold/30 hover:border-pgc-gold"
-                              : "bg-white/[0.04] text-slate-300 border-white/[0.08] hover:border-white/20"
-                          }`}
-                        >
-                          <span>{member.full_name}</span>
-                          {member.ign && (
-                            <span className="text-slate-400 text-[11px] font-mono">({member.ign})</span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
-                {/* Footer Link to Squad Management */}
+                {/* Footer Link */}
                 <div className="p-4 pt-0">
                   <Link
                     href={`/admin/teams/${team.id}`}
-                    className="block w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-center text-xs font-bold text-white transition-colors font-sans"
+                    className="w-full py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors block text-center font-sans"
                   >
-                    Manage Squad
+                    Manage Squad Roster
                   </Link>
                 </div>
               </div>
@@ -352,94 +358,13 @@ export default async function CampusDetailPage({ params }: CampusDetailPageProps
         )}
       </div>
 
-      {/* ── 5. Enrolled Students Directory Table ─────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-400" />
-            <span>Enrolled Students &amp; Esports Players ({campusStudents.length})</span>
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#0B0C16] overflow-hidden shadow-lg">
-          <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-white/[0.02] border-b border-white/10 text-[11px] uppercase tracking-wider text-slate-400 font-bold">
-              <tr>
-                <th className="py-3.5 px-4 font-sans">Student Name</th>
-                <th className="py-3.5 px-4 font-sans">In-Game Name (IGN)</th>
-                <th className="py-3.5 px-4 font-sans">Roll Number</th>
-                <th className="py-3.5 px-4 font-sans">Assigned Squad</th>
-                <th className="py-3.5 px-4 font-sans">Role / Status</th>
-                <th className="py-3.5 px-4 text-right font-sans">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {campusStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 font-sans">
-                    No students enrolled in this campus yet.
-                  </td>
-                </tr>
-              ) : (
-                campusStudents.map((stu) => (
-                  <tr key={stu.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        {stu.avatar_url ? (
-                          <img src={stu.avatar_url} alt={stu.full_name} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center">
-                            {stu.full_name.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold text-white text-sm">{stu.full_name}</p>
-                          <p className="text-[11px] text-slate-400">{stu.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-pgc-gold">
-                      {stu.ign ? `#${stu.ign}` : <span className="text-slate-500 font-sans italic">None</span>}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-300">
-                      {stu.roll_number}
-                    </td>
-                    <td className="py-3.5 px-4 font-semibold text-white">
-                      {stu.team_name ? (
-                        <span className="flex items-center gap-1.5">
-                          <Flame className="w-3.5 h-3.5 text-pgc-red" />
-                          <span>{stu.team_name}</span>
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic">Unassigned Reserve</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {stu.is_team_leader ? (
-                        <span className="px-2 py-0.5 rounded bg-pgc-gold/15 text-pgc-gold border border-pgc-gold/30 font-bold text-[11px]">
-                          👑 Captain
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded bg-white/10 text-slate-300 text-[11px]">
-                          Player
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Link
-                        href={`/admin/users/${stu.id}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-xs font-bold text-slate-200 hover:text-white transition-colors"
-                      >
-                        <span>Manage Student</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* ── 6. Sortable & Searchable Students Directory Table ── */}
+      <DetailStudentTable
+        students={campusStudents}
+        title="Enrolled Students & Players"
+        emptyMessage="No student players currently enrolled in this campus branch."
+        showTeamColumn={true}
+      />
     </div>
   );
 }

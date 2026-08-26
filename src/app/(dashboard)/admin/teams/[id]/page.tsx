@@ -10,9 +10,12 @@ import {
   Shield,
   User,
   Hash,
+  Mail,
   ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import { getSingleTeamData } from "@/features/campus/actions/campusActions";
+import { DetailStudentTable } from "@/features/campus/components/DetailStudentTable";
 
 interface TeamDetailPageProps {
   params: Promise<{ id: string }>;
@@ -47,15 +50,15 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         </div>
       </div>
 
-      {/* ── 2. Squad Hero Master Banner ─────────────────────────── */}
-      <div className="relative rounded-3xl border border-white/10 bg-[#0B0C16] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+      {/* ── 2. Secondary Card: Squad Hero Banner Card (Top Featured) ── */}
+      <div className="relative rounded-3xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md overflow-hidden shadow-sm">
         {/* Full-width banner background */}
-        <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-r from-[#1b153a] via-[#101124] to-[#0B0C16]">
+        <div className="relative h-44 sm:h-56 w-full overflow-hidden bg-gradient-to-r from-pgc-indigo/60 via-pgc-navy/80 to-black/60">
           {team.banner_url ? (
             <img
               src={team.banner_url}
               alt={team.name}
-              className="w-full h-full object-cover opacity-45"
+              className="w-full h-full object-cover opacity-40"
             />
           ) : (
             <div className="w-full h-full bg-white/[0.02]" />
@@ -64,10 +67,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         </div>
 
         {/* Hero Info Overlay */}
-        <div className="relative px-6 sm:px-8 pb-8 -mt-20 sm:-mt-24 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="relative px-6 sm:px-8 pb-7 -mt-16 sm:-mt-20 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div className="flex items-end gap-5">
-            {/* Team Logo Emblem */}
-            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl bg-black/90 border-2 border-white/20 p-2 shadow-2xl flex items-center justify-center shrink-0 backdrop-blur-md overflow-hidden">
+            {/* Squad Logo Emblem */}
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-black/90 border-2 border-white/20 p-2 shadow-2xl flex items-center justify-center shrink-0 backdrop-blur-md overflow-hidden">
               {team.logo_url ? (
                 <img
                   src={team.logo_url}
@@ -79,8 +82,8 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
               )}
             </div>
 
-            {/* Title & Campus Tag */}
-            <div className="space-y-1.5">
+            {/* Title & Affiliation */}
+            <div className="space-y-1.5 font-sans">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full bg-pgc-red/20 border border-pgc-red/40 text-pgc-red text-[10px] font-mono font-bold tracking-wider uppercase">
                   COMPETITIVE SQUAD
@@ -88,9 +91,9 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                 {campus && (
                   <Link
                     href={`/admin/campuses/${campus.id}`}
-                    className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white font-sans font-medium transition-colors"
+                    className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
                   >
-                    <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                    <Building2 className="w-3.5 h-3.5" />
                     <span>{campus.name}</span>
                   </Link>
                 )}
@@ -98,187 +101,137 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
               <h1 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight">
                 {team.name}
               </h1>
-              <p className="text-xs text-slate-400 font-sans">
-                Active tournament roster enrolled in institutional esports championships.
+              <p className="text-xs text-slate-400">
+                Official Punjab Group of Colleges esports tournament roster and competitive squad division.
               </p>
             </div>
           </div>
 
-          {/* ELO Rating Box */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="px-5 py-3.5 rounded-2xl bg-black/60 border border-pgc-gold/40 backdrop-blur-md text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block font-display tracking-wider">
-                Current ELO Score
-              </span>
-              <span className="font-display font-black text-2xl text-pgc-gold flex items-center justify-end gap-1.5">
-                <Trophy className="w-5 h-5 text-pgc-gold" />
-                {team.elo_rating ?? 0} PTS
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Squad Summary Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-white/[0.08] bg-white/[0.02] divide-x divide-white/[0.06]">
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Active Players</p>
-            <p className="font-display font-black text-xl text-white mt-0.5">{teamMembers.length}</p>
-          </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Team Captain</p>
-            <p className="font-display font-bold text-sm text-pgc-gold truncate mt-1">
-              {captain ? captain.full_name : "Unassigned"}
-            </p>
-          </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Captain IGN</p>
-            <p className="font-mono font-bold text-xs text-white truncate mt-1">
-              {captain?.ign ? `#${captain.ign}` : "N/A"}
-            </p>
-          </div>
-          <div className="p-4 px-6 text-center sm:text-left">
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Assigned Campus</p>
-            <p className="font-display font-bold text-xs text-white truncate mt-1">
-              {campus ? campus.name : "Unassigned"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 3. Team Captain Highlight ────────────────────────────── */}
-      <div className="space-y-4">
-        <h2 className="font-display text-lg font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-          <Crown className="w-5 h-5 text-pgc-gold" />
-          <span>Appointed Team Captain</span>
-        </h2>
-
-        {captain ? (
-          <div className="p-6 rounded-2xl bg-[#0B0C16] border border-pgc-gold/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
-            <div className="flex items-center gap-4">
-              {captain.avatar_url ? (
-                <img
-                  src={captain.avatar_url}
-                  alt={captain.full_name}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-pgc-gold shadow-md"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-2xl bg-pgc-gold/20 text-pgc-gold flex items-center justify-center font-display font-black text-xl border border-pgc-gold/30">
-                  <Crown className="w-8 h-8" />
-                </div>
-              )}
-              <div className="space-y-1 font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-pgc-gold/20 text-pgc-gold text-[10px] font-bold uppercase font-display">
-                    Squad Leader
-                  </span>
-                  {captain.ign && (
-                    <span className="px-2 py-0.5 rounded bg-white/[0.08] text-pgc-gold font-mono text-xs font-bold">
-                      #{captain.ign}
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-display font-black text-xl text-white">
-                  {captain.full_name}
-                </h3>
-                <p className="text-xs text-slate-400 font-mono">Roll: {captain.roll_number} • {captain.email}</p>
-              </div>
-            </div>
-
+          {/* Captain Quick Block */}
+          {captain && (
             <Link
               href={`/admin/users/${captain.id}`}
-              className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-bold text-white transition-colors font-sans text-center"
+              className="p-3 px-4 rounded-2xl bg-black/40 border border-pgc-gold/30 backdrop-blur-md flex items-center gap-3 shrink-0 group font-sans"
             >
-              Manage Captain Profile
-            </Link>
-          </div>
-        ) : (
-          <div className="p-8 rounded-2xl border border-white/10 bg-white/[0.01] text-center text-slate-400 font-sans text-xs">
-            No captain currently assigned to this squad.
-          </div>
-        )}
-      </div>
-
-      {/* ── 4. Active Player Roster Table ────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-400" />
-            <span>Active Squad Roster ({teamMembers.length} Players)</span>
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#0B0C16] overflow-hidden shadow-lg">
-          <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-white/[0.02] border-b border-white/10 text-[11px] uppercase tracking-wider text-slate-400 font-bold">
-              <tr>
-                <th className="py-3.5 px-4 font-sans">Player Name</th>
-                <th className="py-3.5 px-4 font-sans">In-Game Name (IGN)</th>
-                <th className="py-3.5 px-4 font-sans">Roll Number</th>
-                <th className="py-3.5 px-4 font-sans">Squad Role</th>
-                <th className="py-3.5 px-4 font-sans">Academic Program</th>
-                <th className="py-3.5 px-4 text-right font-sans">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {teamMembers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 font-sans">
-                    No active players in this squad roster.
-                  </td>
-                </tr>
+              {captain.avatar_url ? (
+                <img src={captain.avatar_url} alt={captain.full_name} className="w-9 h-9 rounded-full object-cover border border-pgc-gold" />
               ) : (
-                teamMembers.map((player) => (
-                  <tr key={player.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        {player.avatar_url ? (
-                          <img src={player.avatar_url} alt={player.full_name} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center">
-                            {player.full_name.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold text-white text-sm">{player.full_name}</p>
-                          <p className="text-[11px] text-slate-400">{player.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-pgc-gold">
-                      {player.ign ? `#${player.ign}` : <span className="text-slate-500 font-sans italic">None</span>}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-300">
-                      {player.roll_number}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {player.is_team_leader ? (
-                        <span className="px-2 py-0.5 rounded bg-pgc-gold/15 text-pgc-gold border border-pgc-gold/30 font-bold text-[11px]">
-                          👑 Captain
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded bg-white/10 text-slate-300 text-[11px]">
-                          Active Player
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400">
-                      {player.academic_program || "ICS / Pre-Engineering"}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Link
-                        href={`/admin/users/${player.id}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] border border-white/10 text-xs font-bold text-slate-200 hover:text-white transition-colors"
-                      >
-                        <span>Manage Player</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                <div className="w-9 h-9 rounded-full bg-pgc-gold/20 text-pgc-gold flex items-center justify-center font-bold text-xs">
+                  <Crown className="w-4 h-4" />
+                </div>
               )}
-            </tbody>
-          </table>
+              <div>
+                <span className="text-[10px] font-bold text-pgc-gold uppercase tracking-wider block font-display">
+                  Squad Captain
+                </span>
+                <span className="text-xs font-bold text-white group-hover:text-pgc-gold transition-colors">
+                  {captain.full_name}
+                </span>
+              </div>
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* ── 3. Primary Summary Stats Overview Cards (Below Banner) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Competitive ELO</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-pgc-gold mt-0.5 tracking-tight">
+              {team.elo_rating ?? 1000} PTS
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-pgc-gold/15 text-pgc-gold flex items-center justify-center">
+            <Trophy className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Active Squad Size</p>
+            <p className="font-display text-2xl lg:text-3xl font-black text-cyan-400 mt-0.5 tracking-tight">
+              {teamMembers.length} Players
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+            <Users className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div className="min-w-0 pr-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Campus Branch</p>
+            <p className="font-display text-lg lg:text-xl font-bold text-white mt-0.5 tracking-tight truncate">
+              {campus ? campus.name : "Free Franchise"}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-pgc-red/15 text-pgc-red flex items-center justify-center shrink-0">
+            <Building2 className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Roster Status</p>
+            <p className="font-display text-lg lg:text-xl font-bold text-pgc-emerald mt-0.5 tracking-tight flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-pgc-emerald" />
+              <span>Official Roster</span>
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-pgc-emerald/15 text-pgc-emerald flex items-center justify-center">
+            <Shield className="w-5 h-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Secondary Card: Appointed Captain Showcase Card ──── */}
+      {captain && (
+        <div className="p-6 rounded-2xl bg-white/[0.02] border border-pgc-gold/30 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            {captain.avatar_url ? (
+              <img
+                src={captain.avatar_url}
+                alt={captain.full_name}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-pgc-gold/80 shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-pgc-gold/20 text-pgc-gold flex items-center justify-center font-display font-black text-xl shrink-0 border border-pgc-gold/40">
+                <Crown className="w-8 h-8" />
+              </div>
+            )}
+            <div className="space-y-1 font-sans">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-pgc-gold/20 border border-pgc-gold/40 text-pgc-gold text-[10px] font-mono font-bold tracking-wider uppercase">
+                  APPOINTED CAPTAIN
+                </span>
+                {captain.ign && (
+                  <span className="text-xs font-mono font-bold text-pgc-gold">#{captain.ign}</span>
+                )}
+              </div>
+              <h3 className="font-display font-black text-xl text-white tracking-tight">
+                {captain.full_name}
+              </h3>
+              <p className="text-xs text-slate-400 font-mono">Roll No: {captain.roll_number}</p>
+            </div>
+          </div>
+
+          <Link
+            href={`/admin/users/${captain.id}`}
+            className="px-4 py-2.5 rounded-xl bg-pgc-gold/15 hover:bg-pgc-gold/25 border border-pgc-gold/40 text-xs font-bold text-pgc-gold transition-colors shrink-0 text-center font-sans"
+          >
+            Manage Captain Profile
+          </Link>
+        </div>
+      )}
+
+      {/* ── 5. Sortable & Searchable Active Squad Roster Table ── */}
+      <DetailStudentTable
+        students={teamMembers}
+        title="Active Squad Roster"
+        emptyMessage="No active players assigned to this squad yet."
+        showTeamColumn={false}
+      />
     </div>
   );
 }

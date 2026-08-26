@@ -45,7 +45,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-16">
+    <div className="space-y-8 max-w-7xl mx-auto pb-16">
       {/* ── 1. Top Breadcrumbs Navigation ───────────────────────── */}
       <div className="flex items-center justify-between">
         <Link
@@ -61,8 +61,8 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         </span>
       </div>
 
-      {/* ── 2. Member Hero Profile Header ───────────────────────── */}
-      <div className="relative rounded-3xl border border-white/10 bg-[#0B0C16] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-6 sm:p-8">
+      {/* ── 2. Secondary Card: Member Hero Profile Header (Top Featured) ── */}
+      <div className="relative rounded-3xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md overflow-hidden shadow-sm p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             {/* Avatar Headshot */}
@@ -128,9 +128,9 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             </div>
           </div>
 
-          {/* Student ELO Badge or Manager Status */}
+          {/* Student ELO Badge */}
           {member.role === "STUDENT" && (
-            <div className="px-5 py-3 rounded-2xl bg-black/50 border border-pgc-gold/30 text-right shrink-0">
+            <div className="px-5 py-3 rounded-2xl bg-black/40 border border-pgc-gold/30 text-right shrink-0 backdrop-blur-md">
               <span className="text-[10px] uppercase font-bold text-slate-400 block font-display tracking-wider">
                 Competitive ELO
               </span>
@@ -143,10 +143,116 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         </div>
       </div>
 
-      {/* ── 3. Institutional Associations Grid ──────────────────── */}
+      {/* ── 3. Primary Summary Stats Overview Cards (Below Banner) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {member.role === "STUDENT" ? (
+          <>
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Competitive ELO</p>
+                <p className="font-display text-2xl lg:text-3xl font-black text-pgc-gold mt-0.5 tracking-tight">
+                  {member.elo_rating ?? 1000} PTS
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-pgc-gold/15 text-pgc-gold flex items-center justify-center">
+                <Trophy className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div className="min-w-0 pr-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Assigned Squad</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-white mt-0.5 tracking-tight truncate">
+                  {team ? team.name : "Free Agent"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-pgc-red/15 text-pgc-red flex items-center justify-center shrink-0">
+                <Flame className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div className="min-w-0 pr-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Campus Branch</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-cyan-400 mt-0.5 tracking-tight truncate">
+                  {campus ? campus.name : "Unassigned"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Roster Role</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-amber-400 mt-0.5 tracking-tight">
+                  {member.is_team_leader ? "Captain" : "Player"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                <Crown className="w-5 h-5" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div className="min-w-0 pr-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Campus Affiliation</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-cyan-400 mt-0.5 tracking-tight truncate">
+                  {campus ? campus.name : "PGC System"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Official Role</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-purple-400 mt-0.5 tracking-tight">
+                  {member.role === "CAMPUS_MANAGER" ? "Manager" : "Faculty"}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Account Status</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-pgc-emerald mt-0.5 tracking-tight flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-pgc-emerald" />
+                  <span>Verified</span>
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-pgc-emerald/15 text-pgc-emerald flex items-center justify-center">
+                <Shield className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Privileges</p>
+                <p className="font-display text-lg lg:text-xl font-bold text-white mt-0.5 tracking-tight">
+                  Host / Mod
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
+                <Shield className="w-5 h-5" />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── 4. Secondary Cards: Institutional Associations Grid ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Campus Affiliation Card */}
-        <div className="p-6 rounded-2xl bg-[#0B0C16] border border-white/10 space-y-3 font-sans shadow-lg">
+        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md space-y-3 font-sans shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] uppercase font-bold text-slate-400 tracking-wider font-display">
               Assigned Campus
@@ -184,7 +290,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
 
         {/* Squad Affiliation Card (For Students) */}
         {member.role === "STUDENT" ? (
-          <div className="p-6 rounded-2xl bg-[#0B0C16] border border-white/10 space-y-3 font-sans shadow-lg">
+          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md space-y-3 font-sans shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-[11px] uppercase font-bold text-slate-400 tracking-wider font-display">
                 Esports Squad Roster
@@ -220,20 +326,20 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             )}
           </div>
         ) : (
-          <div className="p-6 rounded-2xl bg-[#0B0C16] border border-white/10 space-y-3 font-sans shadow-lg">
+          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md space-y-3 font-sans shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-[11px] uppercase font-bold text-slate-400 tracking-wider font-display">
-                Account Status &amp; Privileges
+                Account Privileges
               </span>
               <CheckCircle2 className="w-4 h-4 text-pgc-emerald" />
             </div>
             <div className="space-y-2 text-xs">
               <p className="text-white font-semibold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-pgc-emerald" />
-                <span>Active Institutional Credentials</span>
+                <span>Active Institutional Authorization</span>
               </p>
               <p className="text-slate-400">
-                Authorized for match lobby creation, team moderation, and regional tournament hosting.
+                Authorized for tournament lobby hosting, match dispute arbitration, and squad roster moderation.
               </p>
             </div>
           </div>

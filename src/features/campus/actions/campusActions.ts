@@ -614,12 +614,30 @@ export async function getSingleCampusData(campusId: string) {
       member_count: teamMembers.filter((m) => m.team_id === team.id).length,
     }));
 
-    const enrichedStudents = (studentsRes.data || []).map((s: any) => ({
-      ...s,
-      email: emailsMap.get(s.id) || `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
-      team_name: s.team?.name || undefined,
-      is_team_leader: s.team_id ? teams.find((t) => t.id === s.team_id)?.leader_id === s.id : false,
-    }));
+    // Merge students from direct campus assignment AND squad membership
+    const studentMap = new Map<string, any>();
+    for (const s of (studentsRes.data || [])) {
+      studentMap.set(s.id, {
+        ...s,
+        email: emailsMap.get(s.id) || `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        team_name: s.team?.name || undefined,
+        is_team_leader: s.team_id ? teams.find((t) => t.id === s.team_id)?.leader_id === s.id : false,
+      });
+    }
+
+    for (const tm of teamMembers) {
+      if (tm.role === "STUDENT" && !studentMap.has(tm.id)) {
+        const teamObj = teams.find((t) => t.id === tm.team_id);
+        studentMap.set(tm.id, {
+          ...tm,
+          email: emailsMap.get(tm.id) || `${tm.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          team_name: teamObj?.name || undefined,
+          is_team_leader: teamObj?.leader_id === tm.id,
+        });
+      }
+    }
+
+    const allCampusStudents = Array.from(studentMap.values());
 
     const enrichedManager = managerRes.data
       ? {
@@ -638,7 +656,7 @@ export async function getSingleCampusData(campusId: string) {
       manager: enrichedManager,
       teachers: enrichedTeachers,
       teams: populatedTeams,
-      students: enrichedStudents,
+      students: allCampusStudents,
     };
   } catch (err) {
     console.error("Error in getSingleCampusData:", err);
@@ -653,13 +671,16 @@ export async function getSingleTeamData(teamId: string) {
   try {
     const { data: team, error: teamError } = await supabaseAdmin
       .from("teams")
-      .select("*, campus:campuses(*)")
+      .select("*")
       .eq("id", teamId)
-      .single();
+      .maybeSingle();
 
     if (teamError || !team) return null;
 
-    const [leaderRes, membersRes] = await Promise.all([
+    const [campusRes, leaderRes, membersRes] = await Promise.all([
+      team.campus_id
+        ? supabaseAdmin.from("campuses").select("*").eq("id", team.campus_id).maybeSingle()
+        : Promise.resolve({ data: null }),
       team.leader_id
         ? supabaseAdmin.from("users").select("*").eq("id", team.leader_id).maybeSingle()
         : Promise.resolve({ data: null }),
@@ -697,7 +718,7 @@ export async function getSingleTeamData(teamId: string) {
 
     return {
       team,
-      campus: team.campus || null,
+      campus: campusRes.data || null,
       leader: enrichedLeader,
       members: enrichedMembers,
     };
@@ -714,13 +735,49 @@ export async function getSingleUserData(userId: string) {
   try {
     const { data: user, error: userError } = await supabaseAdmin
       .from("users")
-      .select("*, campus:campuses(*), team:teams(*)")
+      .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (userError || !user) return null;
+    if (userError || !user) {
+      console.error("getSingleUserData user error:", userError);
+      return null;
+    }
 
-    // Fetch auth email for complete admin profile visibility
+    // 1. Fetch team if assigned or leading
+    let teamData: any = null;
+    if (user.team_id) {
+      const { data: team } = await supabaseAdmin
+        .from("teams")
+        .select("*")
+        .eq("id", user.team_id)
+        .maybeSingle();
+      teamData = team;
+    } else {
+      // Check if user is leader of any team
+      const { data: ledTeam } = await supabaseAdmin
+        .from("teams")
+        .select("*")
+        .eq("leader_id", user.id)
+        .maybeSingle();
+      if (ledTeam) {
+        teamData = ledTeam;
+      }
+    }
+
+    // 2. Fetch campus (from user.campus_id OR teamData.campus_id)
+    const effectiveCampusId = user.campus_id || teamData?.campus_id;
+    let campusData: any = null;
+    if (effectiveCampusId) {
+      const { data: campus } = await supabaseAdmin
+        .from("campuses")
+        .select("*")
+        .eq("id", effectiveCampusId)
+        .maybeSingle();
+      campusData = campus;
+    }
+
+    // 3. Fetch auth email for complete admin profile visibility
     let authEmail = "";
     try {
       const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -731,8 +788,8 @@ export async function getSingleUserData(userId: string) {
       // ignore
     }
 
-    const isLeader = user.team ? (user.team as any).leader_id === user.id : false;
-    const eloRating = user.team ? ((user.team as any).elo_rating ?? 1000) : 1000;
+    const isLeader = teamData ? teamData.leader_id === user.id : false;
+    const eloRating = teamData ? (teamData.elo_rating ?? 1000) : 1000;
 
     return {
       user: {
@@ -741,8 +798,8 @@ export async function getSingleUserData(userId: string) {
         is_team_leader: isLeader,
         elo_rating: eloRating,
       },
-      campus: user.campus || null,
-      team: user.team || null,
+      campus: campusData,
+      team: teamData,
     };
   } catch (err) {
     console.error("Error in getSingleUserData:", err);
