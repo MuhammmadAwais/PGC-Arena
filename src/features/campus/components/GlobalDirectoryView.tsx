@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Crown,
   Users,
@@ -53,6 +55,7 @@ export function GlobalDirectoryView({
   onDeleteMember,
   onDeleteTeam,
 }: GlobalDirectoryViewProps) {
+  const router = useRouter();
   const {
     activeDirectoryTab,
     setActiveDirectoryTab,
@@ -302,17 +305,25 @@ export function GlobalDirectoryView({
                     <MoreHorizontal className="w-4 h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/admin/users/${captain.id}`)}
+                      className="gap-2 cursor-pointer"
+                    >
                       <User className="w-3.5 h-3.5 text-pgc-gold" />
-                      <span>View Profile</span>
+                      <span>Manage Captain</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <Flame className="w-3.5 h-3.5 text-pgc-red" />
-                      <span>Team Roster</span>
-                    </DropdownMenuItem>
+                    {captain.team_id && (
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/teams/${captain.team_id}`)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-pgc-red" />
+                        <span>Manage Squad</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={() => onDeleteMember?.(captain, "captain")}
-                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Delete Captain</span>
@@ -444,17 +455,25 @@ export function GlobalDirectoryView({
                     <MoreHorizontal className="w-4 h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem className="gap-2">
-                      <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Campus Summary</span>
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/admin/users/${mgr.id}`)}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <User className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Manage Manager</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
-                      <span>Command Sheet</span>
-                    </DropdownMenuItem>
+                    {mgr.campus_id && (
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/campuses/${mgr.campus_id}`)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-slate-300" />
+                        <span>Manage Campus</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={() => onDeleteMember?.(mgr, "manager")}
-                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Delete Manager</span>
@@ -586,17 +605,16 @@ export function GlobalDirectoryView({
                     <MoreHorizontal className="w-4 h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/admin/users/${tch.id}`)}
+                      className="gap-2 cursor-pointer"
+                    >
                       <GraduationCap className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Lobby History</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <User className="w-3.5 h-3.5 text-slate-300" />
-                      <span>Faculty Details</span>
+                      <span>Manage Faculty</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onDeleteMember?.(tch, "teacher")}
-                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Delete Faculty</span>
@@ -755,17 +773,16 @@ export function GlobalDirectoryView({
                     <MoreHorizontal className="w-4 h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/admin/teams/${team.id}`)}
+                      className="gap-2 cursor-pointer"
+                    >
                       <Flame className="w-3.5 h-3.5 text-pgc-red" />
-                      <span>Team Roster</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <Trophy className="w-3.5 h-3.5 text-pgc-gold" />
-                      <span>Match History</span>
+                      <span>Manage Squad</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onDeleteTeam?.(team)}
-                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Delete Squad</span>
@@ -951,17 +968,25 @@ export function GlobalDirectoryView({
                     <MoreHorizontal className="w-4 h-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem
+                      onClick={() => router.push(`/admin/users/${stu.id}`)}
+                      className="gap-2 cursor-pointer"
+                    >
                       <User className="w-3.5 h-3.5 text-slate-300" />
-                      <span>View Profile</span>
+                      <span>Manage Student</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <Flame className="w-3.5 h-3.5 text-pgc-red" />
-                      <span>Assign Team</span>
-                    </DropdownMenuItem>
+                    {stu.team_id && (
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/teams/${stu.team_id}`)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-pgc-red" />
+                        <span>Manage Squad</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={() => onDeleteMember?.(stu, "player")}
-                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Delete Student</span>

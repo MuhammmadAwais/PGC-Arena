@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   Plus,
@@ -23,7 +24,6 @@ import { SavedListsBar } from "@/features/campus/components/SavedListsBar";
 import { CreateCampusModal } from "@/features/campus/components/CreateCampusModal";
 import { CreateTeamModal } from "@/features/campus/components/CreateTeamModal";
 import { AddMemberModal } from "@/features/campus/components/AddMemberModal";
-import { FranchiseCommandSheet } from "@/features/campus/components/FranchiseCommandSheet";
 import {
   DeleteConfirmationModal,
   type DeletableEntityType,
@@ -35,6 +35,8 @@ import {
 } from "@/features/campus/actions/campusActions";
 
 export default function CampusesAndTeamsPage() {
+  const router = useRouter();
+
   // ── Persistent Zustand Store (Zero-loss route transitions) ────
   const {
     campuses,
@@ -55,7 +57,6 @@ export default function CampusesAndTeamsPage() {
   } = useCampusStore();
 
   // Modals & Selected items state
-  const [selectedCampus, setSelectedCampus] = useState<CampusItem | null>(null);
   const [isCreateCampusOpen, setIsCreateCampusOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
@@ -455,7 +456,7 @@ export default function CampusesAndTeamsPage() {
       ) : viewMode === "hierarchy" ? (
         <CampusHierarchyView
           campuses={filteredCampuses}
-          onSelectCampus={(campus) => setSelectedCampus(campus)}
+          onSelectCampus={(campus) => router.push(`/admin/campuses/${campus.id}`)}
           onCreateTeamForCampus={(campus) => {
             setTargetCampusForAction(campus);
             setIsCreateTeamOpen(true);
@@ -494,14 +495,8 @@ export default function CampusesAndTeamsPage() {
         <GlobalDirectoryView
           members={filteredMembers}
           teams={filteredTeams}
-          onSelectMember={(m) => {
-            const c = campuses.find((c) => c.id === m.campus_id);
-            if (c) setSelectedCampus(c);
-          }}
-          onSelectTeam={(t) => {
-            const c = campuses.find((c) => c.id === t.campus_id);
-            if (c) setSelectedCampus(c);
-          }}
+          onSelectMember={(m) => router.push(`/admin/users/${m.id}`)}
+          onSelectTeam={(t) => router.push(`/admin/teams/${t.id}`)}
           onDeleteMember={(member, type) =>
             setDeleteTarget({
               isOpen: true,
@@ -520,13 +515,6 @@ export default function CampusesAndTeamsPage() {
           }
         />
       )}
-
-      {/* ── Command Drawer / Details ────────────────────────────── */}
-      <FranchiseCommandSheet
-        isOpen={selectedCampus !== null}
-        onOpenChange={(open) => !open && setSelectedCampus(null)}
-        campus={selectedCampus}
-      />
 
       {/* ── Creation Modals ─────────────────────────────────────── */}
       <CreateCampusModal

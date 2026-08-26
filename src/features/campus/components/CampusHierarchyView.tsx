@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   Users,
@@ -48,6 +50,8 @@ export function CampusHierarchyView({
   onDeleteTeam,
   onDeleteMember,
 }: CampusHierarchyViewProps) {
+  const router = useRouter();
+
   // Expanded state per campus
   const [expandedCampuses, setExpandedCampuses] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -204,15 +208,15 @@ export function CampusHierarchyView({
                         <span>Add Member / Player</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onSelectCampus(campus)}
-                        className="gap-2"
+                        onClick={() => router.push(`/admin/campuses/${campus.id}`)}
+                        className="gap-2 cursor-pointer"
                       >
                         <ExternalLink className="w-4 h-4 text-cyan-400" />
-                        <span>View Command Sheet</span>
+                        <span>Manage Campus</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDeleteCampus?.(campus)}
-                        className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                        className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4 text-pgc-red" />
                         <span>Delete Campus</span>
@@ -253,13 +257,13 @@ export function CampusHierarchyView({
                       <Plus className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Add Squad</span>
                     </button>
-                    <button
-                      onClick={() => onSelectCampus(campus)}
+                    <Link
+                      href={`/admin/campuses/${campus.id}`}
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-colors cursor-pointer font-sans"
                     >
-                      <span>Command Sheet</span>
+                      <span>Manage Campus</span>
                       <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
 
@@ -327,9 +331,12 @@ export function CampusHierarchyView({
                           <div className="p-4 pt-5 space-y-3.5">
                             {/* Team Title */}
                             <div>
-                              <h5 className="font-display font-extrabold text-lg lg:text-xl text-white tracking-tight">
+                              <Link
+                                href={`/admin/teams/${team.id}`}
+                                className="font-display font-extrabold text-lg lg:text-xl text-white tracking-tight hover:text-pgc-red transition-colors block"
+                              >
                                 {team.name}
-                              </h5>
+                              </Link>
                               <p className="text-xs text-slate-400 font-sans mt-0.5 font-medium">
                                 {team.members.length} Squad Members Enrolled
                               </p>
@@ -353,9 +360,16 @@ export function CampusHierarchyView({
                                   <span className="text-[10px] uppercase font-extrabold text-slate-400 block font-display tracking-wider">
                                     Team Captain
                                   </span>
-                                  <span className="font-bold text-sm text-white truncate block">
-                                    {team.leader ? team.leader.full_name : "Unassigned"}
-                                  </span>
+                                  {team.leader ? (
+                                    <Link
+                                      href={`/admin/users/${team.leader.id}`}
+                                      className="font-bold text-sm text-white hover:text-pgc-gold transition-colors truncate block"
+                                    >
+                                      {team.leader.full_name}
+                                    </Link>
+                                  ) : (
+                                    <span className="font-bold text-sm text-slate-500 block">Unassigned</span>
+                                  )}
                                 </div>
                               </div>
                               {team.leader?.ign && (
@@ -372,12 +386,13 @@ export function CampusHierarchyView({
                               </span>
                               <div className="flex flex-wrap gap-1.5">
                                 {team.members.map((member) => (
-                                  <span
+                                  <Link
                                     key={member.id}
-                                    className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                    href={`/admin/users/${member.id}`}
+                                    className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
                                       member.is_team_leader
-                                        ? "bg-pgc-gold/10 text-pgc-gold border-pgc-gold/30 font-bold"
-                                        : "bg-white/[0.03] text-slate-300 border-white/[0.08]"
+                                        ? "bg-pgc-gold/10 text-pgc-gold border-pgc-gold/30 hover:border-pgc-gold font-bold"
+                                        : "bg-white/[0.03] text-slate-300 border-white/[0.08] hover:border-white/20"
                                     }`}
                                   >
                                     {member.avatar_url ? (
@@ -395,7 +410,7 @@ export function CampusHierarchyView({
                                     {member.ign && (
                                       <span className="text-slate-400 text-[11px] font-mono">({member.ign})</span>
                                     )}
-                                  </span>
+                                  </Link>
                                 ))}
                               </div>
                             </div>
@@ -403,12 +418,12 @@ export function CampusHierarchyView({
 
                           {/* Card Footer: Action Buttons */}
                           <div className="p-4 pt-0 flex items-center gap-2">
-                            <button
-                              onClick={() => onSelectCampus(campus)}
-                              className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer font-sans"
+                            <Link
+                              href={`/admin/teams/${team.id}`}
+                              className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer font-sans text-center"
                             >
                               Manage Squad
-                            </button>
+                            </Link>
                             <button
                               onClick={() => onDeleteTeam?.(team)}
                               className="p-2 rounded-xl bg-white/[0.04] hover:bg-pgc-red/15 border border-white/10 hover:border-pgc-red/30 text-white/40 hover:text-pgc-red transition-colors cursor-pointer"
@@ -434,7 +449,7 @@ export function CampusHierarchyView({
                     {/* Manager Card */}
                     {campus.manager && (
                       <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/mgr">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <Link href={`/admin/users/${campus.manager.id}`} className="flex items-center gap-3 min-w-0 group-hover/mgr:opacity-90">
                           {campus.manager.avatar_url ? (
                             <img
                               src={campus.manager.avatar_url}
@@ -447,10 +462,10 @@ export function CampusHierarchyView({
                             </div>
                           )}
                           <div className="min-w-0 font-sans">
-                            <p className="text-xs font-bold text-white truncate">{campus.manager.full_name}</p>
+                            <p className="text-xs font-bold text-white truncate group-hover/mgr:text-cyan-300 transition-colors">{campus.manager.full_name}</p>
                             <p className="text-[11px] text-cyan-400 truncate font-semibold">Campus Manager</p>
                           </div>
-                        </div>
+                        </Link>
                         <button
                           onClick={() => onDeleteMember?.(campus.manager!, "manager")}
                           className="p-1.5 rounded-lg text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0 opacity-0 group-hover/mgr:opacity-100"
@@ -467,7 +482,7 @@ export function CampusHierarchyView({
                         key={teacher.id}
                         className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/tch"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <Link href={`/admin/users/${teacher.id}`} className="flex items-center gap-3 min-w-0 group-hover/tch:opacity-90">
                           {teacher.avatar_url ? (
                             <img
                               src={teacher.avatar_url}
@@ -480,10 +495,10 @@ export function CampusHierarchyView({
                             </div>
                           )}
                           <div className="min-w-0 font-sans">
-                            <p className="text-xs font-bold text-white truncate">{teacher.full_name}</p>
+                            <p className="text-xs font-bold text-white truncate group-hover/tch:text-purple-300 transition-colors">{teacher.full_name}</p>
                             <p className="text-[11px] text-slate-400 truncate font-medium">Faculty / Coach</p>
                           </div>
-                        </div>
+                        </Link>
                         <button
                           onClick={() => onDeleteMember?.(teacher, "teacher")}
                           className="p-1.5 rounded-lg text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0 opacity-0 group-hover/tch:opacity-100"
