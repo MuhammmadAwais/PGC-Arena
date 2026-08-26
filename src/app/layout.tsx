@@ -5,9 +5,12 @@ import {
   Inter,
   Noto_Sans_Arabic,
   Noto_Nastaliq_Urdu,
-  Amiri,
-} from "next/font/google";
+  Amiri, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 
 // ── Esports Display (English HUD, countdowns, bracket headers)
 const chakraPetch = Chakra_Petch({
@@ -62,13 +65,13 @@ export default function RootLayout({
       lang="en"
       dir="ltr"
       suppressHydrationWarning
-      className={[
-        chakraPetch.variable,
-        inter.variable,
-        notoSansArabic.variable,
-        notoNastaliqUrdu.variable,
-        amiri.variable,
-      ].join(" ")}
+      className={cn([
+              chakraPetch.variable,
+              inter.variable,
+              notoSansArabic.variable,
+              notoNastaliqUrdu.variable,
+              amiri.variable,
+            ].join(" "), "font-sans", geist.variable)}
     >
       <body
         suppressHydrationWarning

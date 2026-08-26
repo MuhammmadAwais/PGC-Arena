@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/admin/campuses",
-    label: "Campuses & Tenancy",
+    label: "Campuses & Teams",
     icon: Building2,
   },
   {

@@ -75,6 +75,40 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Redirect authenticated users away from public auth routes
+  if (user && (pathname === "/" || pathname.startsWith("/login"))) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role, is_first_login")
+      .eq("id", user.id)
+      .single();
+
+    if (profile) {
+      const redirectUrl = request.nextUrl.clone();
+      if (profile.is_first_login) {
+        redirectUrl.pathname = "/onboarding";
+      } else {
+        switch (profile.role) {
+          case "SUPER_ADMIN":
+            redirectUrl.pathname = "/admin";
+            break;
+          case "CAMPUS_MANAGER":
+            redirectUrl.pathname = "/manager";
+            break;
+          case "TEACHER":
+            redirectUrl.pathname = "/teacher";
+            break;
+          case "STUDENT":
+            redirectUrl.pathname = "/arena";
+            break;
+          default:
+            return supabaseResponse;
+        }
+      }
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   // IMPORTANT: supabaseResponse must be returned as-is to preserve cookies.
   return supabaseResponse;
 }

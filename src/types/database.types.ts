@@ -16,19 +16,28 @@ export type Database = {
     Tables: {
       campuses: {
         Row: {
+          banner_url: string | null
           created_at: string | null
           id: string
+          logo_url: string | null
           name: string
+          region: string | null
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string | null
           id?: string
+          logo_url?: string | null
           name: string
+          region?: string | null
         }
         Update: {
+          banner_url?: string | null
           created_at?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
+          region?: string | null
         }
         Relationships: []
       }
@@ -125,24 +134,33 @@ export type Database = {
       }
       teams: {
         Row: {
+          banner_url: string | null
           campus_id: string
           created_at: string | null
           elo_rating: number | null
           id: string
+          leader_id: string | null
+          logo_url: string | null
           name: string
         }
         Insert: {
+          banner_url?: string | null
           campus_id: string
           created_at?: string | null
           elo_rating?: number | null
           id?: string
+          leader_id?: string | null
+          logo_url?: string | null
           name: string
         }
         Update: {
+          banner_url?: string | null
           campus_id?: string
           created_at?: string | null
           elo_rating?: number | null
           id?: string
+          leader_id?: string | null
+          logo_url?: string | null
           name?: string
         }
         Relationships: [
@@ -153,10 +171,18 @@ export type Database = {
             referencedRelation: "campuses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "teams_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       users: {
         Row: {
+          avatar_url: string | null
           campus_id: string | null
           full_name: string
           id: string
@@ -167,6 +193,7 @@ export type Database = {
           team_id: string | null
         }
         Insert: {
+          avatar_url?: string | null
           campus_id?: string | null
           full_name: string
           id: string
@@ -177,6 +204,7 @@ export type Database = {
           team_id?: string | null
         }
         Update: {
+          avatar_url?: string | null
           campus_id?: string | null
           full_name?: string
           id?: string

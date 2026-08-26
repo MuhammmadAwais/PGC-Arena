@@ -1,14 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ChevronRight, Home, Activity } from "lucide-react";
 import Link from "next/link";
 
 // ── Breadcrumb label map ─────────────────────────────────────────
 const SEGMENT_LABELS: Record<string, string> = {
   admin: "Admin",
-  campuses: "Campuses & Tenancy",
+  campuses: "Campuses & Teams",
   curriculum: "Curriculum & Boards",
   "ai-creation": "AI Question Forge",
   "question-bank": "Question Bank Vault",
@@ -34,37 +34,62 @@ function useBreadcrumbs(): BreadcrumbSegment[] {
   }, [pathname]);
 }
 
-/** Live PKT clock — updates every second */
+/** Live PKT clock — updates every second on client only to eliminate hydration errors */
 function LiveClock() {
-  // Pure client-side — rendered after hydration
-  const now = new Date();
-  const pkt = now.toLocaleTimeString("en-US", {
-    timeZone: "Asia/Karachi",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-  const utc = now.toLocaleTimeString("en-US", {
-    timeZone: "UTC",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const date = now.toLocaleDateString("en-US", {
-    timeZone: "Asia/Karachi",
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const [timeState, setTimeState] = useState<{ pkt: string; utc: string; date: string } | null>(null);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeState({
+        pkt: now.toLocaleTimeString("en-US", {
+          timeZone: "Asia/Karachi",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }),
+        utc: now.toLocaleTimeString("en-US", {
+          timeZone: "UTC",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }),
+        date: now.toLocaleDateString("en-US", {
+          timeZone: "Asia/Karachi",
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        }),
+      });
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!timeState) {
+    return (
+      <div className="flex flex-col items-end leading-tight opacity-40">
+        <span className="text-[13px] font-mono font-semibold text-white/80">
+          --:--:-- <span className="text-white/30 font-normal">PKT</span>
+        </span>
+        <span className="text-[10px] text-white/30 font-mono">
+          --:--:-- UTC
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-end leading-tight">
       <span className="text-[13px] font-mono font-semibold text-white/80">
-        {pkt} <span className="text-white/30 font-normal">PKT</span>
+        {timeState.pkt} <span className="text-white/30 font-normal">PKT</span>
       </span>
       <span className="text-[10px] text-white/30 font-mono">
-        {utc} UTC · {date}
+        {timeState.utc} UTC · {timeState.date}
       </span>
     </div>
   );
