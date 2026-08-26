@@ -16,6 +16,7 @@ import {
   UserPlus,
   MoreVertical,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,7 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { CampusItem } from "../types/campusTypes";
+import type { CampusItem, MemberItem, TeamItem } from "../types/campusTypes";
 
 interface CampusHierarchyViewProps {
   campuses: CampusItem[];
@@ -32,6 +33,9 @@ interface CampusHierarchyViewProps {
   onCreateTeamForCampus: (campus: CampusItem) => void;
   onAddMemberForCampus: (campus: CampusItem) => void;
   onToggleStarCampus: (campusId: string) => void;
+  onDeleteCampus?: (campus: CampusItem) => void;
+  onDeleteTeam?: (team: TeamItem) => void;
+  onDeleteMember?: (member: MemberItem, type: string) => void;
 }
 
 export function CampusHierarchyView({
@@ -40,6 +44,9 @@ export function CampusHierarchyView({
   onCreateTeamForCampus,
   onAddMemberForCampus,
   onToggleStarCampus,
+  onDeleteCampus,
+  onDeleteTeam,
+  onDeleteMember,
 }: CampusHierarchyViewProps) {
   // Expanded state per campus
   const [expandedCampuses, setExpandedCampuses] = useState<Record<string, boolean>>(() => {
@@ -202,6 +209,13 @@ export function CampusHierarchyView({
                       >
                         <ExternalLink className="w-4 h-4 text-cyan-400" />
                         <span>View Command Sheet</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDeleteCampus?.(campus)}
+                        className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                      >
+                        <Trash2 className="w-4 h-4 text-pgc-red" />
+                        <span>Delete Campus</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -387,13 +401,20 @@ export function CampusHierarchyView({
                             </div>
                           </div>
 
-                          {/* Card Footer: Action Button */}
-                          <div className="p-4 pt-0">
+                          {/* Card Footer: Action Buttons */}
+                          <div className="p-4 pt-0 flex items-center gap-2">
                             <button
                               onClick={() => onSelectCampus(campus)}
-                              className="w-full py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer font-sans"
+                              className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer font-sans"
                             >
                               Manage Squad
+                            </button>
+                            <button
+                              onClick={() => onDeleteTeam?.(team)}
+                              className="p-2 rounded-xl bg-white/[0.04] hover:bg-pgc-red/15 border border-white/10 hover:border-pgc-red/30 text-white/40 hover:text-pgc-red transition-colors cursor-pointer"
+                              title={`Delete Squad ${team.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -412,22 +433,31 @@ export function CampusHierarchyView({
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {/* Manager Card */}
                     {campus.manager && (
-                      <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center gap-3">
-                        {campus.manager.avatar_url ? (
-                          <img
-                            src={campus.manager.avatar_url}
-                            alt={campus.manager.full_name}
-                            className="w-9 h-9 rounded-full object-cover border border-cyan-400/40 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0 font-display">
-                            MGR
+                      <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/mgr">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {campus.manager.avatar_url ? (
+                            <img
+                              src={campus.manager.avatar_url}
+                              alt={campus.manager.full_name}
+                              className="w-9 h-9 rounded-full object-cover border border-cyan-400/40 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0 font-display">
+                              MGR
+                            </div>
+                          )}
+                          <div className="min-w-0 font-sans">
+                            <p className="text-xs font-bold text-white truncate">{campus.manager.full_name}</p>
+                            <p className="text-[11px] text-cyan-400 truncate font-semibold">Campus Manager</p>
                           </div>
-                        )}
-                        <div className="min-w-0 font-sans">
-                          <p className="text-xs font-bold text-white truncate">{campus.manager.full_name}</p>
-                          <p className="text-[11px] text-cyan-400 truncate font-semibold">Campus Manager</p>
                         </div>
+                        <button
+                          onClick={() => onDeleteMember?.(campus.manager!, "manager")}
+                          className="p-1.5 rounded-lg text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0 opacity-0 group-hover/mgr:opacity-100"
+                          title="Delete Manager"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     )}
 
@@ -435,23 +465,32 @@ export function CampusHierarchyView({
                     {campus.teachers.map((teacher) => (
                       <div
                         key={teacher.id}
-                        className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center gap-3"
+                        className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/tch"
                       >
-                        {teacher.avatar_url ? (
-                          <img
-                            src={teacher.avatar_url}
-                            alt={teacher.full_name}
-                            className="w-9 h-9 rounded-full object-cover border border-purple-400/40 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-xs shrink-0 font-display">
-                            TCH
+                        <div className="flex items-center gap-3 min-w-0">
+                          {teacher.avatar_url ? (
+                            <img
+                              src={teacher.avatar_url}
+                              alt={teacher.full_name}
+                              className="w-9 h-9 rounded-full object-cover border border-purple-400/40 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-xs shrink-0 font-display">
+                              TCH
+                            </div>
+                          )}
+                          <div className="min-w-0 font-sans">
+                            <p className="text-xs font-bold text-white truncate">{teacher.full_name}</p>
+                            <p className="text-[11px] text-slate-400 truncate font-medium">Faculty / Coach</p>
                           </div>
-                        )}
-                        <div className="min-w-0 font-sans">
-                          <p className="text-xs font-bold text-white truncate">{teacher.full_name}</p>
-                          <p className="text-[11px] text-slate-400 truncate font-medium">Faculty / Coach</p>
                         </div>
+                        <button
+                          onClick={() => onDeleteMember?.(teacher, "teacher")}
+                          className="p-1.5 rounded-lg text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0 opacity-0 group-hover/tch:opacity-100"
+                          title="Delete Teacher"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>

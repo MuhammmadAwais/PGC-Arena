@@ -14,6 +14,7 @@ import {
   SearchX,
   ExternalLink,
   User,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,6 +41,8 @@ interface GlobalDirectoryViewProps {
   teams: TeamItem[];
   onSelectMember?: (member: MemberItem) => void;
   onSelectTeam?: (team: TeamItem) => void;
+  onDeleteMember?: (member: MemberItem, type: string) => void;
+  onDeleteTeam?: (team: TeamItem) => void;
 }
 
 export function GlobalDirectoryView({
@@ -47,6 +50,8 @@ export function GlobalDirectoryView({
   teams,
   onSelectMember,
   onSelectTeam,
+  onDeleteMember,
+  onDeleteTeam,
 }: GlobalDirectoryViewProps) {
   const {
     activeDirectoryTab,
@@ -305,6 +310,13 @@ export function GlobalDirectoryView({
                       <Flame className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Team Roster</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteMember?.(captain, "captain")}
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
+                      <span>Delete Captain</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -440,6 +452,13 @@ export function GlobalDirectoryView({
                       <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
                       <span>Command Sheet</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteMember?.(mgr, "manager")}
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
+                      <span>Delete Manager</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -574,6 +593,13 @@ export function GlobalDirectoryView({
                     <DropdownMenuItem className="gap-2">
                       <User className="w-3.5 h-3.5 text-slate-300" />
                       <span>Faculty Details</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteMember?.(tch, "teacher")}
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
+                      <span>Delete Faculty</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -736,6 +762,13 @@ export function GlobalDirectoryView({
                     <DropdownMenuItem className="gap-2">
                       <Trophy className="w-3.5 h-3.5 text-pgc-gold" />
                       <span>Match History</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteTeam?.(team)}
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
+                      <span>Delete Squad</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -925,6 +958,13 @@ export function GlobalDirectoryView({
                     <DropdownMenuItem className="gap-2">
                       <Flame className="w-3.5 h-3.5 text-pgc-red" />
                       <span>Assign Team</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteMember?.(stu, "player")}
+                      className="gap-2 text-pgc-red hover:bg-pgc-red/10 focus:bg-pgc-red/10 focus:text-pgc-red"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-pgc-red" />
+                      <span>Delete Student</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

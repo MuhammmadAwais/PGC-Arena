@@ -25,10 +25,10 @@ const addMemberSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER", "STUDENT"]),
-  roll_number: z.string().min(1, "Roll or Employee number is required"),
+  roll_number: z.string().min(6, "Roll Number / Employee ID must be at least 6 characters"),
   campus_id: z.string().uuid().optional().nullable(),
   team_id: z.string().uuid().optional().nullable(),
-  ign: z.string().optional().nullable(),
+  ign: z.string().min(6, "In-Game Name (IGN) must be at least 6 characters").optional().nullable().or(z.literal("")),
   is_captain: z.boolean().optional().default(false),
 });
 
@@ -363,5 +363,178 @@ export async function assignTeamLeaderAction(teamId: string, studentId: string |
   } catch (error: any) {
     console.error("Assign Captain Error:", error);
     return { error: error.message || "Failed to update team captain." };
+  }
+}
+
+/**
+ * Real-time Validation Action: Check if an IGN (In-Game Name) is already taken
+ */
+export async function checkIgnAvailabilityAction(
+  ign: string
+): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean }> {
+  try {
+    const trimmed = ign.trim();
+    if (!trimmed) {
+      return { available: false, tooShort: true };
+    }
+    if (trimmed.length < 6) {
+      return { available: false, tooShort: true };
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("id, full_name, ign")
+      .ilike("ign", trimmed)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Check IGN Error:", error);
+      return { available: true };
+    }
+
+    if (data) {
+      return { available: false, takenBy: data.full_name };
+    }
+
+    return { available: true };
+  } catch (err) {
+    console.error("Check IGN Exception:", err);
+    return { available: true };
+  }
+}
+
+/**
+ * Real-time Validation Action: Check if a Roll Number / Employee ID is already registered
+ */
+export async function checkRollNumberAvailabilityAction(
+  rollNumber: string
+): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean }> {
+  try {
+    const trimmed = rollNumber.trim();
+    if (!trimmed) {
+      return { available: false, tooShort: true };
+    }
+    if (trimmed.length < 6) {
+      return { available: false, tooShort: true };
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("id, full_name, roll_number")
+      .ilike("roll_number", trimmed)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Check Roll Number Error:", error);
+      return { available: true };
+    }
+
+    if (data) {
+      return { available: false, takenBy: data.full_name };
+    }
+
+    return { available: true };
+  } catch (err) {
+    console.error("Check Roll Number Exception:", err);
+    return { available: true };
+  }
+}
+
+/**
+ * Server Action: Permanently Delete a Campus
+ */
+export async function deleteCampusAction(
+  campusId: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    if (!campusId) {
+      return { error: "Campus ID is required." };
+    }
+
+    // 1. Delete the campus record (cascades or cleans up associations)
+    const { error } = await supabaseAdmin
+      .from("campuses")
+      .delete()
+      .eq("id", campusId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/campuses");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Delete Campus Error:", err);
+    return { error: err.message || "Failed to delete campus." };
+  }
+}
+
+/**
+ * Server Action: Permanently Delete an Esports Team
+ */
+export async function deleteTeamAction(
+  teamId: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    if (!teamId) {
+      return { error: "Team ID is required." };
+    }
+
+    // 1. Unassign all members from this team
+    await supabaseAdmin
+      .from("users")
+      .update({ team_id: null })
+      .eq("team_id", teamId);
+
+    // 2. Delete the team record
+    const { error } = await supabaseAdmin
+      .from("teams")
+      .delete()
+      .eq("id", teamId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/campuses");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Delete Team Error:", err);
+    return { error: err.message || "Failed to delete team." };
+  }
+}
+
+/**
+ * Server Action: Permanently Delete a Member (Player, Teacher, Manager)
+ */
+export async function deleteMemberAction(
+  userId: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    if (!userId) {
+      return { error: "User ID is required." };
+    }
+
+    // 1. Clear team leadership if this user is a captain
+    await supabaseAdmin
+      .from("teams")
+      .update({ leader_id: null })
+      .eq("leader_id", userId);
+
+    // 2. Delete from public.users
+    const { error: dbError } = await supabaseAdmin
+      .from("users")
+      .delete()
+      .eq("id", userId);
+
+    if (dbError) throw dbError;
+
+    // 3. Delete from Supabase Auth
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authError) {
+      console.warn("Auth deletion warning (user might only exist in public.users):", authError);
+    }
+
+    revalidatePath("/admin/campuses");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Delete Member Error:", err);
+    return { error: err.message || "Failed to delete member." };
   }
 }

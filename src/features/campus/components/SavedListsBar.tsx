@@ -267,16 +267,21 @@ export function SavedListsBar({
 
       {/* ── Save Current View Modal ─────────────────────────────── */}
       <Dialog open={isSaveModalOpen} onOpenChange={setIsSaveModalOpen}>
-        <DialogContent className="bg-[#0B0C16]/95 border-white/10 text-white max-w-md backdrop-blur-xl">
+        <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-md backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-bold">Save Custom Filter View</DialogTitle>
-            <DialogDescription className="text-slate-400 text-xs">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pgc-red/25 to-pgc-red/5 border border-pgc-red/30 text-pgc-red flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(227,59,41,0.2)]">
+              <Bookmark className="w-5 h-5 text-pgc-red" />
+            </div>
+            <DialogTitle className="font-display text-2xl font-black tracking-tight text-white">
+              Save Custom View
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs font-sans leading-relaxed">
               Save your current search query and filters as a quick-access list in the top bar.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSaveCustomList} className="space-y-4 mt-2">
+          <form onSubmit={handleSaveCustomList} className="space-y-4.5 mt-3">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 block font-sans">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
                 Saved List Name
               </label>
               <Input
@@ -284,21 +289,21 @@ export function SavedListsBar({
                 value={customListName}
                 onChange={(e) => setCustomListName(e.target.value)}
                 required
-                className="bg-black/40 border-white/10 text-white placeholder-white/30 font-sans"
+                className="h-11 bg-black/40 border-white/10 text-white placeholder-white/30 rounded-xl focus-visible:border-pgc-red/60 focus-visible:ring-1 focus-visible:ring-pgc-red/40 font-sans"
                 autoFocus
               />
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setIsSaveModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer font-sans"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-pgc-red text-white text-xs font-semibold hover:bg-pgc-hover transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(227,59,41,0.3)] cursor-pointer font-sans"
               >
                 Save List
               </button>
@@ -309,10 +314,15 @@ export function SavedListsBar({
 
       {/* ── Manage Saved Lists Modal (Scalable, Edit & Delete) ──── */}
       <Dialog open={isManageModalOpen} onOpenChange={setIsManageModalOpen}>
-        <DialogContent className="bg-[#0B0C16]/95 border-white/10 text-white max-w-lg max-h-[85vh] overflow-y-auto backdrop-blur-xl">
+        <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-lg max-h-[85vh] overflow-y-auto backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl font-bold">Manage Saved Lists</DialogTitle>
-            <DialogDescription className="text-slate-400 text-xs">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-white/[0.12] to-white/[0.02] border border-white/15 text-white flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+              <SlidersHorizontal className="w-5 h-5 text-white/80" />
+            </div>
+            <DialogTitle className="font-display text-2xl font-black tracking-tight text-white">
+              Manage Saved Lists
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs font-sans leading-relaxed">
               View, rename, apply, or delete your custom saved filter lists.
             </DialogDescription>
           </DialogHeader>

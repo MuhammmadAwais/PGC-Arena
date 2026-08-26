@@ -24,6 +24,15 @@ import { CreateCampusModal } from "@/features/campus/components/CreateCampusModa
 import { CreateTeamModal } from "@/features/campus/components/CreateTeamModal";
 import { AddMemberModal } from "@/features/campus/components/AddMemberModal";
 import { FranchiseCommandSheet } from "@/features/campus/components/FranchiseCommandSheet";
+import {
+  DeleteConfirmationModal,
+  type DeletableEntityType,
+} from "@/features/campus/components/DeleteConfirmationModal";
+import {
+  deleteCampusAction,
+  deleteTeamAction,
+  deleteMemberAction,
+} from "@/features/campus/actions/campusActions";
 
 export default function CampusesAndTeamsPage() {
   // ── Persistent Zustand Store (Zero-loss route transitions) ────
@@ -51,6 +60,36 @@ export default function CampusesAndTeamsPage() {
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [targetCampusForAction, setTargetCampusForAction] = useState<CampusItem | null>(null);
+
+  // 2FA Delete Confirmation State
+  const [deleteTarget, setDeleteTarget] = useState<{
+    isOpen: boolean;
+    entityType: DeletableEntityType;
+    entityId: string;
+    entityName: string;
+  }>({
+    isOpen: false,
+    entityType: "campus",
+    entityId: "",
+    entityName: "",
+  });
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget.entityId) return;
+
+    if (deleteTarget.entityType === "campus") {
+      const res = await deleteCampusAction(deleteTarget.entityId);
+      if (res.error) throw new Error(res.error);
+    } else if (deleteTarget.entityType === "team") {
+      const res = await deleteTeamAction(deleteTarget.entityId);
+      if (res.error) throw new Error(res.error);
+    } else {
+      const res = await deleteMemberAction(deleteTarget.entityId);
+      if (res.error) throw new Error(res.error);
+    }
+
+    await fetchData(true);
+  };
 
   // Initial fetch on mount (only runs if not cached in store)
   useEffect(() => {
@@ -426,6 +465,30 @@ export default function CampusesAndTeamsPage() {
             setIsAddMemberOpen(true);
           }}
           onToggleStarCampus={toggleStarCampus}
+          onDeleteCampus={(campus) =>
+            setDeleteTarget({
+              isOpen: true,
+              entityType: "campus",
+              entityId: campus.id,
+              entityName: campus.name,
+            })
+          }
+          onDeleteTeam={(team) =>
+            setDeleteTarget({
+              isOpen: true,
+              entityType: "team",
+              entityId: team.id,
+              entityName: team.name,
+            })
+          }
+          onDeleteMember={(member, type) =>
+            setDeleteTarget({
+              isOpen: true,
+              entityType: type as DeletableEntityType,
+              entityId: member.id,
+              entityName: member.full_name,
+            })
+          }
         />
       ) : (
         <GlobalDirectoryView
@@ -439,6 +502,22 @@ export default function CampusesAndTeamsPage() {
             const c = campuses.find((c) => c.id === t.campus_id);
             if (c) setSelectedCampus(c);
           }}
+          onDeleteMember={(member, type) =>
+            setDeleteTarget({
+              isOpen: true,
+              entityType: type as DeletableEntityType,
+              entityId: member.id,
+              entityName: member.full_name,
+            })
+          }
+          onDeleteTeam={(team) =>
+            setDeleteTarget({
+              isOpen: true,
+              entityType: "team",
+              entityId: team.id,
+              entityName: team.name,
+            })
+          }
         />
       )}
 
@@ -472,6 +551,17 @@ export default function CampusesAndTeamsPage() {
         teams={allTeams}
         defaultCampusId={targetCampusForAction?.id || null}
         onSuccess={() => fetchData(true)}
+      />
+
+      {/* ── 2FA Secure Delete Confirmation Modal ─────────────────── */}
+      <DeleteConfirmationModal
+        isOpen={deleteTarget.isOpen}
+        onOpenChange={(open) =>
+          setDeleteTarget((prev) => ({ ...prev, isOpen: open }))
+        }
+        entityType={deleteTarget.entityType}
+        entityName={deleteTarget.entityName}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

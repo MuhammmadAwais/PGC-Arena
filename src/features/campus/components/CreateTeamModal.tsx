@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flame, Crown, Building2, Trophy, Users } from "lucide-react";
+import { Flame, Crown, Building2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { createTeamAction } from "../actions/campusActions";
 import type { CampusItem, MemberItem } from "../types/campusTypes";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 
 interface CreateTeamModalProps {
   isOpen: boolean;
@@ -33,7 +34,6 @@ export function CreateTeamModal({
   const [name, setName] = useState("");
   const [campusId, setCampusId] = useState(defaultCampusId || (campuses[0]?.id ?? ""));
   const [leaderId, setLeaderId] = useState<string>("");
-  const [eloRating, setEloRating] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +42,33 @@ export function CreateTeamModal({
     (s) => s.role === "STUDENT" && (!campusId || s.campus_id === campusId)
   );
 
+  // Format Campus options for SearchableSelect
+  const campusOptions: SearchableOption[] = campuses.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sublabel: c.region ? `Region: ${c.region}` : undefined,
+    avatarUrl: c.logo_url,
+    icon: <Building2 className="w-4 h-4 text-white/50" />,
+  }));
+
+  // Format Captain options for SearchableSelect
+  const captainOptions: SearchableOption[] = [
+    {
+      value: "",
+      label: "Select Captain (or assign later)",
+      sublabel: "Squad will start without an appointed captain",
+      icon: <Crown className="w-4 h-4 text-white/30" />,
+    },
+    ...availableStudents.map((s) => ({
+      value: s.id,
+      label: s.full_name,
+      sublabel: s.roll_number ? `Roll: ${s.roll_number}` : undefined,
+      badge: s.ign ? `#${s.ign}` : undefined,
+      avatarUrl: s.avatar_url,
+      icon: <Crown className="w-4 h-4 text-pgc-gold" />,
+    })),
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !campusId) return;
@@ -49,11 +76,12 @@ export function CreateTeamModal({
     setIsLoading(true);
     setError(null);
 
+    // Initial ELO rating is strictly hardcoded to 0
     const result = await createTeamAction({
       name: name.trim(),
       campus_id: campusId,
       leader_id: leaderId ? leaderId : null,
-      elo_rating: Number(eloRating) || 1000,
+      elo_rating: 0,
     });
 
     if (result.error) {
@@ -70,21 +98,23 @@ export function CreateTeamModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0B0C16]/95 border-white/10 text-white max-w-md backdrop-blur-xl">
+      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-md backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
         <DialogHeader>
-          <div className="w-10 h-10 rounded-xl bg-pgc-gold/20 text-pgc-gold flex items-center justify-center mb-2">
-            <Flame className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pgc-gold/25 to-pgc-gold/5 border border-pgc-gold/30 text-pgc-gold flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+            <Flame className="w-5 h-5 text-pgc-gold" />
           </div>
-          <DialogTitle className="font-display text-2xl font-bold">Create Esports Team</DialogTitle>
-          <DialogDescription className="text-white/50 text-xs">
-            Form a new competitive squad for tournament brackets and campus matches.
+          <DialogTitle className="font-display text-2xl font-black tracking-tight text-white">
+            Create Esports Team
+          </DialogTitle>
+          <DialogDescription className="text-slate-400 text-xs font-sans leading-relaxed">
+            Form a new competitive squad for tournament brackets, scrims, and campus matches.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-3">
+        <form onSubmit={handleSubmit} className="space-y-4.5 mt-3">
           {/* Team Name */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-1.5 block">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
               Team Name
             </label>
             <Input
@@ -92,97 +122,64 @@ export function CreateTeamModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="bg-black/40 border-white/10 text-white placeholder-white/30"
+              className="h-11 bg-black/40 border-white/10 text-white placeholder-white/30 rounded-xl focus-visible:border-pgc-gold/60 focus-visible:ring-1 focus-visible:ring-pgc-gold/40"
               autoFocus
             />
           </div>
 
-          {/* Campus Selector */}
+          {/* Searchable Campus Selector */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-1.5 block">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
               Assigned Campus
             </label>
-            <div className="relative">
-              <select
-                value={campusId}
-                onChange={(e) => {
-                  setCampusId(e.target.value);
-                  setLeaderId("");
-                }}
-                required
-                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-sm text-white focus:outline-none focus:border-pgc-red/60 cursor-pointer appearance-none"
-              >
-                {campuses.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-[#0B0C16] text-white">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
-            </div>
+            <SearchableSelect
+              options={campusOptions}
+              value={campusId}
+              onChange={(val) => {
+                setCampusId(val);
+                setLeaderId("");
+              }}
+              placeholder="Search or select campus..."
+              searchPlaceholder="Filter campuses..."
+              icon={<Building2 className="w-4 h-4" />}
+            />
           </div>
 
-          {/* Captain Selector */}
+          {/* Searchable Captain Selector */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-1.5 flex items-center justify-between">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between font-sans">
               <span>Assign Team Captain</span>
-              <span className="text-[10px] text-pgc-gold font-normal">Optional</span>
+              <span className="text-[10px] text-pgc-gold font-semibold uppercase tracking-wider">Optional</span>
             </label>
-            <div className="relative">
-              <select
-                value={leaderId}
-                onChange={(e) => setLeaderId(e.target.value)}
-                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-sm text-white focus:outline-none focus:border-pgc-gold/60 cursor-pointer appearance-none"
-              >
-                <option value="" className="bg-[#0B0C16] text-white/60">
-                  Select Captain (or assign later)
-                </option>
-                {availableStudents.map((s) => (
-                  <option key={s.id} value={s.id} className="bg-[#0B0C16] text-white">
-                    {s.full_name} {s.ign ? `(#${s.ign})` : ""} - {s.roll_number}
-                  </option>
-                ))}
-              </select>
-              <Crown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pgc-gold pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Initial ELO */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-1.5 block">
-              Starting ELO Rating
-            </label>
-            <div className="relative">
-              <Trophy className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <Input
-                type="number"
-                value={eloRating}
-                onChange={(e) => setEloRating(Number(e.target.value))}
-                min={500}
-                max={3000}
-                className="pl-9 bg-black/40 border-white/10 text-white"
-              />
-            </div>
+            <SearchableSelect
+              options={captainOptions}
+              value={leaderId}
+              onChange={(val) => setLeaderId(val)}
+              placeholder="Search student or assign later..."
+              searchPlaceholder="Search by student name, IGN or roll #..."
+              icon={<Crown className="w-4 h-4 text-pgc-gold" />}
+              allowClear
+            />
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-pgc-red">
+            <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-pgc-red font-sans">
               {error}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2.5 pt-2">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer font-sans"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-semibold hover:bg-pgc-hover active:scale-[0.98] transition-all disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(227,59,41,0.3)] cursor-pointer font-sans"
             >
               {isLoading ? "Creating Team..." : "Create Team"}
             </button>
