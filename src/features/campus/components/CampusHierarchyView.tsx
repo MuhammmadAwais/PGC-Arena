@@ -199,15 +199,19 @@ export function CampusHierarchyView({
                 </div>
 
                 {/* Action Menu & Expand Chevron */}
-                <div className="flex items-center gap-2 pl-2">
+                <div
+                  className="flex items-center gap-2 pl-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <DropdownMenu>
                     <DropdownMenuTrigger
+                      onClick={(e) => e.stopPropagation()}
                       className="p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white transition-colors cursor-pointer"
-                      title="Actions"
+                      title="Campus Actions"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 p-1.5 font-sans">
+                    <DropdownMenuContent align="end" className="w-56 p-1.5 font-sans z-50">
                       <DropdownMenuLabel>Campus Quick Actions</DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => onCreateTeamForCampus(campus)}
@@ -248,11 +252,15 @@ export function CampusHierarchyView({
                   </DropdownMenu>
 
                   <button
-                    onClick={() => toggleExpand(campus.id)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(campus.id);
+                    }}
                     className="p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors cursor-pointer"
-                    title={isExpanded ? "Collapse" : "Expand"}
+                    title={isExpanded ? "Collapse Details" : "Expand Details"}
                   >
-                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-cyan-400" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
