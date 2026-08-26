@@ -51,6 +51,7 @@ interface CampusState {
   setViewMode: (mode: "hierarchy" | "directory") => void;
   setActiveDirectoryTab: (tab: "all" | "captains" | "managers" | "teachers" | "students" | "teams") => void;
   setActivePresetId: (id: string) => void;
+  setActivePreset: (preset: SavedFilterPreset) => void;
   setFilters: (updates: Partial<FilterState>) => void;
   resetFilters: () => void;
   toggleStarCampus: (campusId: string) => void;
@@ -126,6 +127,21 @@ export const useCampusStore = create<CampusState>((set, get) => ({
   setActiveDirectoryTab: (activeDirectoryTab) => set({ activeDirectoryTab }),
 
   setActivePresetId: (activePresetId) => set({ activePresetId }),
+
+  setActivePreset: (preset) =>
+    set({
+      activePresetId: preset.id,
+      filters: {
+        searchQuery: preset.filters.searchQuery ?? "",
+        role: preset.filters.role ?? "ALL",
+        campusId: preset.filters.campusId ?? "ALL",
+        status: preset.filters.status ?? "ALL",
+        isLeaderOnly: Boolean(preset.filters.isLeaderOnly),
+        unassignedOnly: Boolean(preset.filters.unassignedOnly),
+        isStarredOnly: Boolean(preset.filters.isStarredOnly),
+      },
+      pagination: {},
+    }),
 
   setFilters: (updates) =>
     set((state) => ({

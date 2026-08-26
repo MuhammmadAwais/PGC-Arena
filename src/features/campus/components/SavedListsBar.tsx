@@ -254,34 +254,30 @@ export function SavedListsBar({
           className="flex-1 flex items-center gap-2 overflow-x-auto scrollbar-none py-1 scroll-smooth"
         >
           {allPresets.map((preset) => {
-            const isPresetActive =
-              activePresetId === preset.id ||
-              (preset.id === "starred" && Boolean(currentFilterState?.isStarredOnly));
+            const isPresetActive = activePresetId === preset.id;
             const isStarredActive = preset.id === "starred" && (isPresetActive || Boolean(currentFilterState?.isStarredOnly));
             const isCustomActive = preset.isCustom && isPresetActive;
-            const isAllRecordsActive = preset.id === "all" && isPresetActive;
+            const isAllRecordsActive = preset.id === "all" && isPresetActive && !currentFilterState?.isStarredOnly;
 
             return (
               <button
                 key={preset.id}
+                type="button"
                 onClick={() => handlePresetClick(preset)}
-                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 ${
+                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 border ${
                   isStarredActive
-                    ? "bg-amber-500/25 border-amber-400 text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.4)] border ring-1 ring-amber-400/50 font-bold"
+                    ? "bg-amber-500/15 border-amber-400/50 text-amber-300 font-semibold shadow-sm"
                     : isCustomActive
-                    ? "bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 border-cyan-400 text-cyan-200 shadow-[0_0_18px_rgba(6,182,212,0.4)] border ring-1 ring-cyan-400/50 font-bold"
+                    ? "bg-cyan-500/15 border-cyan-400/50 text-cyan-300 font-semibold shadow-sm"
                     : isAllRecordsActive
-                    ? "bg-white/15 border-white/30 text-white shadow-[0_0_12px_rgba(255,255,255,0.15)] border ring-1 ring-white/20 font-bold"
+                    ? "bg-white/15 border-white/25 text-white font-semibold shadow-sm"
                     : isPresetActive
-                    ? "bg-pgc-red text-white shadow-[0_0_15px_rgba(227,59,41,0.35)] border border-pgc-red font-bold"
-                    : "bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 font-medium"
+                    ? "bg-pgc-red/15 border-pgc-red/50 text-white font-semibold shadow-sm"
+                    : "bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border-white/[0.08] hover:border-white/20 font-medium"
                 }`}
               >
-                {getIcon(preset.iconName, isPresetActive, preset.isCustom)}
+                {getIcon(preset.iconName, isPresetActive || isStarredActive, preset.isCustom)}
                 <span>{preset.label}</span>
-                {isPresetActive && preset.id !== "all" && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse ml-0.5" />
-                )}
               </button>
             );
           })}

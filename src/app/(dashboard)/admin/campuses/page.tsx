@@ -71,6 +71,7 @@ export default function CampusesAndTeamsPage() {
     setFilters,
     resetFilters,
     setActivePresetId,
+    setActivePreset,
     toggleStarCampus,
   } = useCampusStore();
 
@@ -304,16 +305,7 @@ export default function CampusesAndTeamsPage() {
   const totalStudentsCount = allMembers.filter((m) => m.role === "STUDENT").length;
 
   const handleSelectPreset = (preset: SavedFilterPreset) => {
-    setActivePresetId(preset.id);
-    setFilters({
-      searchQuery: preset.filters.searchQuery ?? "",
-      role: preset.filters.role ?? "ALL",
-      campusId: preset.filters.campusId ?? "ALL",
-      status: preset.filters.status ?? "ALL",
-      isLeaderOnly: Boolean(preset.filters.isLeaderOnly),
-      unassignedOnly: Boolean(preset.filters.unassignedOnly),
-      isStarredOnly: Boolean(preset.filters.isStarredOnly),
-    });
+    setActivePreset(preset);
   };
 
   return (
@@ -321,12 +313,7 @@ export default function CampusesAndTeamsPage() {
       {/* ── Page Header ────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full bg-pgc-red/15 border border-pgc-red/30 text-[10px] font-extrabold uppercase tracking-widest text-pgc-red font-display">
-              INSTITUTIONAL ECOSYSTEM
-            </span>
-          </div>
-          <h1 className="font-display text-2xl lg:text-3xl font-black text-white tracking-tight">
+          <h1 className="font-display text-2xl lg:text-3xl font-black text-pgc-red tracking-tight">
             Campuses &amp; Tournament Rosters
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-sans mt-1 max-w-2xl leading-relaxed">
@@ -339,12 +326,12 @@ export default function CampusesAndTeamsPage() {
           <button
             onClick={() => {
               setTargetCampusForAction(null);
-              setIsAddStudentOpen(true);
+              setIsCreateCampusOpen(true);
             }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(227,59,41,0.25)] cursor-pointer font-sans"
           >
-            <GraduationCap className="w-4 h-4" />
-            <span>Enroll Student</span>
+            <Plus className="w-4 h-4" />
+            <span>Create Campus</span>
           </button>
 
           <button
@@ -356,17 +343,6 @@ export default function CampusesAndTeamsPage() {
           >
             <Flame className="w-4 h-4 text-pgc-red" />
             <span>Create Squad</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setTargetCampusForAction(null);
-              setIsCreateCampusOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans"
-          >
-            <Plus className="w-4 h-4 text-cyan-400" />
-            <span>Create Campus</span>
           </button>
 
           <button

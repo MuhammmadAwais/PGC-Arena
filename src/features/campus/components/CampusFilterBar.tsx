@@ -212,28 +212,30 @@ export function CampusFilterBar({
 
           {/* 3. Quick Starred Campuses Filter Toggle */}
           <button
+            type="button"
             onClick={() => onFilterChange({ isStarredOnly: !filters.isStarredOnly })}
             className={`flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               filters.isStarredOnly
-                ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] font-bold"
+                ? "bg-amber-500/15 border-amber-400/50 text-amber-300 shadow-sm"
                 : "bg-black/30 border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.04]"
             }`}
             title="Filter by starred campuses"
           >
-            <Star className={`w-3.5 h-3.5 ${filters.isStarredOnly ? "fill-amber-400 text-amber-400" : ""}`} />
+            <Star className={`w-3.5 h-3.5 ${filters.isStarredOnly ? "fill-amber-400 text-amber-400" : "text-amber-400/70"}`} />
             <span>Starred</span>
           </button>
 
           {/* 4. Quick Captain Filter Toggle */}
           <button
+            type="button"
             onClick={() => onFilterChange({ isLeaderOnly: !filters.isLeaderOnly })}
             className={`flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               filters.isLeaderOnly
-                ? "bg-pgc-gold/15 border-pgc-gold text-pgc-gold shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                ? "bg-pgc-gold/15 border-pgc-gold/50 text-pgc-gold shadow-sm"
                 : "bg-black/30 border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-pgc-gold" />
             <span>Captains Only</span>
           </button>
         </div>
@@ -248,59 +250,64 @@ export function CampusFilterBar({
 
           {filters.isStarredOnly && (
             <button
+              type="button"
               onClick={() => onFilterChange({ isStarredOnly: false })}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-semibold hover:bg-amber-500/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-medium hover:bg-amber-500/25 transition-colors cursor-pointer"
             >
               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span>Starred Campuses</span>
-              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+              <X className="w-3 h-3 ml-0.5 text-amber-400/60 hover:text-amber-300" />
             </button>
           )}
 
           {filters.isLeaderOnly && (
             <button
+              type="button"
               onClick={() => onFilterChange({ isLeaderOnly: false })}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pgc-gold/20 border border-pgc-gold/40 text-pgc-gold text-xs font-semibold hover:bg-pgc-gold/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pgc-gold/15 border border-pgc-gold/30 text-pgc-gold text-xs font-medium hover:bg-pgc-gold/25 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3 h-3 text-pgc-gold" />
               <span>Captains Only</span>
-              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+              <X className="w-3 h-3 ml-0.5 text-pgc-gold/60 hover:text-pgc-gold" />
             </button>
           )}
 
           {filters.campusId !== "ALL" && selectedCampus && (
             <button
+              type="button"
               onClick={() => onFilterChange({ campusId: "ALL" })}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-medium hover:bg-cyan-500/25 transition-colors cursor-pointer"
             >
               <Building2 className="w-3 h-3 text-cyan-400" />
               <span>Campus: {selectedCampus.name}</span>
-              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+              <X className="w-3 h-3 ml-0.5 text-cyan-400/60 hover:text-cyan-300" />
             </button>
           )}
 
           {filters.role !== "ALL" && (
             <button
+              type="button"
               onClick={() => onFilterChange({ role: "ALL" })}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-semibold hover:bg-purple-500/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-medium hover:bg-purple-500/25 transition-colors cursor-pointer"
             >
               <SelectedRoleIcon className="w-3 h-3" />
               <span>Role: {selectedRole.label}</span>
-              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+              <X className="w-3 h-3 ml-0.5 text-purple-400/60 hover:text-purple-300" />
             </button>
           )}
 
           {filters.searchQuery && (
             <button
+              type="button"
               onClick={() => {
                 setLocalSearch("");
                 onFilterChange({ searchQuery: "" });
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium hover:bg-white/15 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/15 text-slate-200 text-xs font-medium hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
             >
-              <Search className="w-3 h-3 text-slate-300" />
+              <Search className="w-3 h-3 text-slate-400" />
               <span>&ldquo;{filters.searchQuery}&rdquo;</span>
-              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+              <X className="w-3 h-3 ml-0.5 text-slate-400 hover:text-white" />
             </button>
           )}
         </div>
