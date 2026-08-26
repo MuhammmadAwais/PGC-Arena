@@ -35,7 +35,7 @@ interface CampusHierarchyViewProps {
   onToggleStarCampus: (campusId: string) => void;
   onDeleteCampus?: (campus: CampusItem) => void;
   onDeleteTeam?: (team: TeamItem) => void;
-  onDeleteMember?: (member: MemberItem, type: string) => void;
+  onDeleteMember?: (member: { id: string; full_name: string }, type: string) => void;
 }
 
 export function CampusHierarchyView({
