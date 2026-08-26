@@ -78,7 +78,7 @@ export default function RootLayout({
         className="bg-pgc-indigo text-white font-sans antialiased min-h-screen flex flex-col relative"
       >
         {/* Global fixed background */}
-        <div className="fixed inset-0 -z-50 bg-black">
+        <div className="fixed inset-0 -z-50 bg-black" suppressHydrationWarning>
           <Image
             src="/global-bg.webp"
             alt="Global background"
