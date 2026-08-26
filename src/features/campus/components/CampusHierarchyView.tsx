@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -19,6 +19,8 @@ import {
   MoreVertical,
   ArrowRight,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +35,7 @@ interface CampusHierarchyViewProps {
   campuses: CampusItem[];
   onSelectCampus: (campus: CampusItem) => void;
   onCreateTeamForCampus: (campus: CampusItem) => void;
+  onAddStudentForCampus?: (campus: CampusItem) => void;
   onAddMemberForCampus: (campus: CampusItem) => void;
   onToggleStarCampus: (campusId: string) => void;
   onDeleteCampus?: (campus: CampusItem) => void;
@@ -44,6 +47,7 @@ export function CampusHierarchyView({
   campuses,
   onSelectCampus,
   onCreateTeamForCampus,
+  onAddStudentForCampus,
   onAddMemberForCampus,
   onToggleStarCampus,
   onDeleteCampus,
@@ -51,6 +55,16 @@ export function CampusHierarchyView({
   onDeleteMember,
 }: CampusHierarchyViewProps) {
   const router = useRouter();
+
+  // Pagination state
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  const totalPages = Math.max(1, Math.ceil(campuses.length / pageSize));
+  const paginatedCampuses = useMemo(() => {
+    const start = pageIndex * pageSize;
+    return campuses.slice(start, start + pageSize);
+  }, [campuses, pageIndex, pageSize]);
 
   // Expanded state per campus
   const [expandedCampuses, setExpandedCampuses] = useState<Record<string, boolean>>(() => {
@@ -79,9 +93,12 @@ export function CampusHierarchyView({
     );
   }
 
+  const startRecord = pageIndex * pageSize + 1;
+  const endRecord = Math.min((pageIndex + 1) * pageSize, campuses.length);
+
   return (
     <div className="flex flex-col gap-4">
-      {campuses.map((campus, idx) => {
+      {paginatedCampuses.map((campus, idx) => {
         const isExpanded = Boolean(expandedCampuses[campus.id]);
 
         return (
@@ -89,94 +106,93 @@ export function CampusHierarchyView({
             key={campus.id}
             className="rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md hover:border-white/[0.14] transition-all duration-200 overflow-hidden"
           >
-            {/* ── 1. Campus Master Header (Unified Frosted Glass Row with Left Banner) ── */}
+            {/* ── 1. Campus Master Header ─────────────────────────── */}
             <div
               onClick={() => toggleExpand(campus.id)}
               className="relative px-6 py-4.5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors cursor-pointer border-b border-white/[0.04] overflow-hidden group"
             >
-              {/* Full-Width Campus Banner with Seamless Ambient Gradient Overlay */}
+              {/* Full-Width Campus Banner */}
               {campus.banner_url && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   <img
                     src={campus.banner_url}
-                    alt=""
-                    className="w-full h-full object-cover opacity-15 group-hover:opacity-25 transition-all duration-700 group-hover:scale-105"
+                    alt={campus.name}
+                    className="w-full h-full object-cover opacity-20 group-hover:scale-[1.02] transition-transform duration-700 ease-out"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#0B0C16]/50 via-[#0B0C16]/80 to-[#0B0C16]/95 backdrop-blur-[1px]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0B0C16] via-[#0B0C16]/80 to-transparent" />
                 </div>
               )}
 
-              {/* Left Zone: Star, Campus Avatar / Crest, Name & Leadership */}
-              <div className="relative z-10 flex items-center gap-4 min-w-0">
-                {/* Favorite Toggle */}
+              {/* Left Identity: Star + Emblem + Title + Region */}
+              <div className="relative flex items-center gap-4 z-10 min-w-0">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleStarCampus(campus.id);
                   }}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-pgc-gold transition-colors cursor-pointer shrink-0"
-                  title="Star Campus"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+                    campus.isStarred
+                      ? "text-pgc-gold hover:text-amber-300"
+                      : "text-white/20 hover:text-white/60"
+                  }`}
+                  title={campus.isStarred ? "Starred Campus" : "Star this campus"}
                 >
                   <Star
-                    className={`w-4 h-4 ${
-                      campus.isStarred ? "text-pgc-gold fill-pgc-gold" : "text-white/30"
-                    }`}
+                    className="w-4 h-4"
+                    fill={campus.isStarred ? "currentColor" : "none"}
                   />
                 </button>
 
-                {/* Campus Crest / Avatar */}
-                <div className="relative w-11 h-11 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                {/* Campus Emblem */}
+                <div className="w-12 h-12 rounded-xl bg-black/80 border border-white/20 flex items-center justify-center p-2 shrink-0 shadow-lg backdrop-blur-md">
                   {campus.logo_url ? (
                     <img
                       src={campus.logo_url}
                       alt={campus.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <Building2 className="w-5 h-5 text-white/80" />
+                    <Building2 className="w-6 h-6 text-pgc-red" />
                   )}
                 </div>
 
-                {/* Campus Title & Leadership */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-display font-black text-pgc-red/90 uppercase tracking-widest">
-                      #{idx + 1}
-                    </span>
-                    <h3 className="font-display text-lg lg:text-xl font-extrabold text-white tracking-tight truncate">
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-display font-black text-lg text-white group-hover:text-cyan-300 transition-colors truncate">
                       {campus.name}
-                    </h3>
+                    </span>
+                    {campus.region && (
+                      <span className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/10 text-[10px] font-mono text-slate-300 uppercase tracking-wider">
+                        {campus.region}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 font-sans">
-                    <span>Region: <strong className="text-slate-200 font-semibold">{campus.region}</strong></span>
-                    <span className="text-white/20">•</span>
-                    <span>Manager: <strong className="text-slate-200 font-semibold">{campus.manager ? campus.manager.full_name : "Unassigned"}</strong></span>
-                  </div>
+                  <p className="text-xs text-slate-400 font-sans truncate">
+                    {campus.manager ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-slate-500 font-medium">Head:</span>
+                        <span className="text-slate-300 font-semibold">{campus.manager.full_name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-500 italic">No Campus Manager Appointed</span>
+                    )}
+                  </p>
                 </div>
               </div>
 
-              {/* Right Zone: Clean Tabular Metric Counters & Action Chevron */}
-              <div
-                className="relative z-10 flex items-center justify-between md:justify-end gap-6 shrink-0 pt-2 md:pt-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Tabular KPIs */}
-                <div className="flex items-center gap-6 text-xs font-sans">
-                  <div className="text-right">
+              {/* Right Stats & Quick Actions */}
+              <div className="relative flex items-center justify-between md:justify-end gap-6 z-10 shrink-0">
+                <div className="flex items-center gap-5">
+                  <div className="text-left md:text-right">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Squads</p>
                     <p className="font-display font-black text-base lg:text-lg text-white">{campus.teams.length}</p>
                   </div>
-
-                  <div className="h-6 w-px bg-white/10" />
-
-                  <div className="text-right">
+                  <div className="text-left md:text-right">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Faculty</p>
                     <p className="font-display font-black text-base lg:text-lg text-white">{campus.teachers.length}</p>
                   </div>
-
-                  <div className="h-6 w-px bg-white/10" />
-
-                  <div className="text-right">
+                  <div className="text-left md:text-right">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-sans">Students</p>
                     <p className="font-display font-black text-base lg:text-lg text-white">{campus.students.length}</p>
                   </div>
@@ -191,21 +207,28 @@ export function CampusHierarchyView({
                     >
                       <MoreVertical className="w-4 h-4" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 p-1.5">
+                    <DropdownMenuContent align="end" className="w-56 p-1.5 font-sans">
                       <DropdownMenuLabel>Campus Quick Actions</DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => onCreateTeamForCampus(campus)}
-                        className="gap-2"
+                        className="gap-2 cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-pgc-red" />
                         <span>Add Esports Squad</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => (onAddStudentForCampus ? onAddStudentForCampus(campus) : onAddMemberForCampus(campus))}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <GraduationCap className="w-4 h-4 text-pgc-red" />
+                        <span>Enroll Student Player</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => onAddMemberForCampus(campus)}
-                        className="gap-2"
+                        className="gap-2 cursor-pointer"
                       >
                         <UserPlus className="w-4 h-4 text-pgc-emerald" />
-                        <span>Add Member / Player</span>
+                        <span>Add Faculty / Staff</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => router.push(`/admin/campuses/${campus.id}`)}
@@ -258,6 +281,7 @@ export function CampusHierarchyView({
                       <span>Add Squad</span>
                     </button>
                     <Link
+                      prefetch={true}
                       href={`/admin/campuses/${campus.id}`}
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-colors cursor-pointer font-sans"
                     >
@@ -278,17 +302,17 @@ export function CampusHierarchyView({
 
                   {campus.teams.length === 0 ? (
                     <div className="bg-white/[0.01] border border-white/[0.06] rounded-xl p-6 text-center text-xs text-slate-400 font-sans font-normal">
-                      No active squads found for this campus.
+                      No active squads registered for this campus. Click &quot;Add Squad&quot; above.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {campus.teams.map((team, tIdx) => (
                         <div
                           key={team.id}
-                          className="rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.18] transition-all flex flex-col justify-between overflow-hidden shadow-sm group"
+                          className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.18] transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-sm backdrop-blur-md"
                         >
-                          {/* ── Team Banner Header with Overlay ──── */}
-                          <div className="relative h-24 w-full overflow-hidden bg-gradient-to-r from-[#171638] to-[#0B0C16]">
+                          {/* Banner Header */}
+                          <div className="relative h-24 w-full overflow-hidden bg-gradient-to-r from-pgc-indigo to-black/80">
                             {team.banner_url ? (
                               <img
                                 src={team.banner_url}
@@ -296,24 +320,22 @@ export function CampusHierarchyView({
                                 className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-500"
                               />
                             ) : (
-                              <div className="w-full h-full bg-white/[0.03]" />
+                              <div className="w-full h-full bg-white/[0.02]" />
                             )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C16] via-black/40 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-                            {/* Top Position & ELO Badge Overlay */}
                             <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between text-xs">
-                              <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 font-display font-black text-[10px] uppercase tracking-wider text-white">
+                              <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 font-display font-black text-[10px] uppercase text-white">
                                 SQUAD #{tIdx + 1}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-pgc-gold/30 font-display font-black text-xs text-pgc-gold flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-pgc-gold/30 font-display font-black text-xs text-pgc-gold flex items-center gap-1">
                                 <Trophy className="w-3 h-3" />
                                 {team.elo_rating} PTS
                               </span>
                             </div>
 
-                            {/* Team Logo Emblem (Positioned on lower edge of banner) */}
-                            <div className="absolute -bottom-3 left-4 flex items-end gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-black/80 border-2 border-white/20 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
+                            <div className="absolute -bottom-3 left-4">
+                              <div className="w-12 h-12 rounded-xl bg-black/90 border-2 border-white/20 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
                                 {team.logo_url ? (
                                   <img
                                     src={team.logo_url}
@@ -327,23 +349,31 @@ export function CampusHierarchyView({
                             </div>
                           </div>
 
-                          {/* ── Card Body (Below Banner) ──────────── */}
-                          <div className="p-4 pt-5 space-y-3.5">
-                            {/* Team Title */}
-                            <div>
-                              <Link
-                                href={`/admin/teams/${team.id}`}
-                                className="font-display font-extrabold text-lg lg:text-xl text-white tracking-tight hover:text-pgc-red transition-colors block"
+                          <div className="p-4 pt-5 space-y-3 font-sans">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <Link
+                                  prefetch={true}
+                                  href={`/admin/teams/${team.id}`}
+                                  className="font-display font-black text-lg text-white hover:text-pgc-red transition-colors block"
+                                >
+                                  {team.name}
+                                </Link>
+                                <p className="text-xs text-slate-400 mt-0.5 font-normal">
+                                  {team.members.length} Squad Members Enrolled
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => onDeleteTeam?.(team)}
+                                className="p-1 rounded text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0"
+                                title="Delete Team"
                               >
-                                {team.name}
-                              </Link>
-                              <p className="text-xs text-slate-400 font-sans mt-0.5 font-medium">
-                                {team.members.length} Squad Members Enrolled
-                              </p>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
 
-                            {/* Captain Block with Headshot Avatar */}
-                            <div className="p-2.5 rounded-xl bg-black/30 border border-white/[0.06] flex items-center justify-between text-xs">
+                            {/* Captain info */}
+                            <div className="p-2.5 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between text-xs">
                               <div className="flex items-center gap-2.5 min-w-0">
                                 {team.leader?.avatar_url ? (
                                   <img
@@ -357,80 +387,33 @@ export function CampusHierarchyView({
                                   </div>
                                 )}
                                 <div className="min-w-0 font-sans">
-                                  <span className="text-[10px] uppercase font-extrabold text-slate-400 block font-display tracking-wider">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400 block font-display">
                                     Team Captain
                                   </span>
                                   {team.leader ? (
                                     <Link
+                                      prefetch={true}
                                       href={`/admin/users/${team.leader.id}`}
                                       className="font-bold text-sm text-white hover:text-pgc-gold transition-colors truncate block"
                                     >
                                       {team.leader.full_name}
                                     </Link>
                                   ) : (
-                                    <span className="font-bold text-sm text-slate-500 block">Unassigned</span>
+                                    <span className="font-bold text-sm text-slate-500 block font-sans">Unassigned</span>
                                   )}
                                 </div>
-                              </div>
-                              {team.leader?.ign && (
-                                <span className="px-2 py-0.5 rounded bg-white/[0.06] text-xs font-mono text-pgc-gold font-bold">
-                                  #{team.leader.ign}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Active Roster List with Player Headshots */}
-                            <div className="space-y-1.5 font-sans">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                Active Players:
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {team.members.map((member) => (
-                                  <Link
-                                    key={member.id}
-                                    href={`/admin/users/${member.id}`}
-                                    className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                                      member.is_team_leader
-                                        ? "bg-pgc-gold/10 text-pgc-gold border-pgc-gold/30 hover:border-pgc-gold font-bold"
-                                        : "bg-white/[0.03] text-slate-300 border-white/[0.08] hover:border-white/20"
-                                    }`}
-                                  >
-                                    {member.avatar_url ? (
-                                      <img
-                                        src={member.avatar_url}
-                                        alt={member.full_name}
-                                        className="w-4 h-4 rounded-full object-cover"
-                                      />
-                                    ) : (
-                                      <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold">
-                                        {member.full_name.charAt(0)}
-                                      </span>
-                                    )}
-                                    <span>{member.full_name}</span>
-                                    {member.ign && (
-                                      <span className="text-slate-400 text-[11px] font-mono">({member.ign})</span>
-                                    )}
-                                  </Link>
-                                ))}
                               </div>
                             </div>
                           </div>
 
-                          {/* Card Footer: Action Buttons */}
-                          <div className="p-4 pt-0 flex items-center gap-2">
+                          <div className="p-4 pt-0 font-sans">
                             <Link
+                              prefetch={true}
                               href={`/admin/teams/${team.id}`}
-                              className="flex-1 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer font-sans text-center"
+                              className="w-full py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors block text-center"
                             >
-                              Manage Squad
+                              Manage Squad Roster
                             </Link>
-                            <button
-                              onClick={() => onDeleteTeam?.(team)}
-                              className="p-2 rounded-xl bg-white/[0.04] hover:bg-pgc-red/15 border border-white/10 hover:border-pgc-red/30 text-white/40 hover:text-pgc-red transition-colors cursor-pointer"
-                              title={`Delete Squad ${team.name}`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </div>
                       ))}
@@ -438,51 +421,24 @@ export function CampusHierarchyView({
                   )}
                 </div>
 
-                {/* ── C. Faculty & Leadership Section with Headshots ── */}
-                <div className="pt-3 border-t border-white/[0.06]">
-                  <h4 className="font-display text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-slate-400" />
-                    <span>Faculty &amp; Campus Leadership</span>
+                {/* ── C. Faculty Coaches Roster ──────────────────────── */}
+                <div className="pt-2">
+                  <h4 className="font-display text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-3">
+                    <GraduationCap className="w-4 h-4 text-purple-400" />
+                    <span>Faculty Coaches &amp; Leads ({campus.teachers.length})</span>
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {/* Manager Card */}
-                    {campus.manager && (
-                      <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/mgr">
-                        <Link href={`/admin/users/${campus.manager.id}`} className="flex items-center gap-3 min-w-0 group-hover/mgr:opacity-90">
-                          {campus.manager.avatar_url ? (
-                            <img
-                              src={campus.manager.avatar_url}
-                              alt={campus.manager.full_name}
-                              className="w-9 h-9 rounded-full object-cover border border-cyan-400/40 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0 font-display">
-                              MGR
-                            </div>
-                          )}
-                          <div className="min-w-0 font-sans">
-                            <p className="text-xs font-bold text-white truncate group-hover/mgr:text-cyan-300 transition-colors">{campus.manager.full_name}</p>
-                            <p className="text-[11px] text-cyan-400 truncate font-semibold">Campus Manager</p>
-                          </div>
-                        </Link>
-                        <button
-                          onClick={() => onDeleteMember?.(campus.manager!, "manager")}
-                          className="p-1.5 rounded-lg text-white/20 hover:text-pgc-red hover:bg-pgc-red/10 transition-colors cursor-pointer shrink-0 opacity-0 group-hover/mgr:opacity-100"
-                          title="Delete Manager"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Teachers Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 font-sans">
                     {campus.teachers.map((teacher) => (
                       <div
                         key={teacher.id}
-                        className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between gap-3 group/tch"
+                        className="group/tch relative p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-purple-400/30 transition-all flex items-center justify-between gap-3"
                       >
-                        <Link href={`/admin/users/${teacher.id}`} className="flex items-center gap-3 min-w-0 group-hover/tch:opacity-90">
+                        <Link
+                          prefetch={true}
+                          href={`/admin/users/${teacher.id}`}
+                          className="flex items-center gap-3 min-w-0 flex-1"
+                        >
                           {teacher.avatar_url ? (
                             <img
                               src={teacher.avatar_url}
@@ -515,6 +471,61 @@ export function CampusHierarchyView({
           </div>
         );
       })}
+
+      {/* ── 3. Bottom Pagination Controls ──────────────────────────── */}
+      {campuses.length > 5 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-xs font-sans text-slate-400">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing <span className="text-white font-bold">{startRecord}</span> to{" "}
+              <span className="text-white font-bold">{endRecord}</span> of{" "}
+              <span className="text-white font-bold">{campuses.length}</span> campuses
+            </span>
+
+            <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
+              <span>Per page:</span>
+              {[5, 10, 25].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => {
+                    setPageSize(size);
+                    setPageIndex(0);
+                  }}
+                  className={`px-2 py-0.5 rounded-md font-mono text-xs transition-colors cursor-pointer ${
+                    pageSize === size
+                      ? "bg-white/15 text-white font-bold"
+                      : "hover:bg-white/[0.06] text-slate-400"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+              disabled={pageIndex === 0}
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none text-white transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <span className="font-mono text-xs text-white">
+              Page {pageIndex + 1} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={pageIndex >= totalPages - 1}
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none text-white transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   Flame,
@@ -13,12 +14,20 @@ import {
   Shield,
   Edit3,
   UserPlus,
-  Plus,
 } from "lucide-react";
 import { DetailStudentTable } from "./DetailStudentTable";
-import { EditTeamModal } from "./EditTeamModal";
-import { AssignStudentModal } from "./AssignStudentModal";
-import { AddMemberModal } from "./AddMemberModal";
+import { getAssignableDataAction } from "../actions/campusActions";
+
+// ── Dynamic Modal Code-Splitting ──────────────────────────────────
+const DynamicEditTeamModal = dynamic(
+  () => import("./EditTeamModal").then((mod) => mod.EditTeamModal),
+  { ssr: false }
+);
+
+const DynamicAssignStudentModal = dynamic(
+  () => import("./AssignStudentModal").then((mod) => mod.AssignStudentModal),
+  { ssr: false }
+);
 
 interface TeamDetailViewProps {
   team: {
@@ -33,9 +42,6 @@ interface TeamDetailViewProps {
   campus: any;
   leader: any;
   members: any[];
-  allCampuses: any[];
-  allCandidateStudents: any[];
-  allTeams: any[];
 }
 
 export function TeamDetailView({
@@ -43,13 +49,45 @@ export function TeamDetailView({
   campus,
   leader,
   members,
-  allCampuses,
-  allCandidateStudents,
-  allTeams,
 }: TeamDetailViewProps) {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+
+  // Lazy-loaded assignables cache
+  const [assignables, setAssignables] = useState<{
+    campuses: any[];
+    users: any[];
+    teams: any[];
+  } | null>(null);
+
+  const loadAssignables = useCallback(async () => {
+    if (assignables) return;
+    const res = await getAssignableDataAction();
+    setAssignables(res);
+  }, [assignables]);
+
+  const handleOpenEdit = () => {
+    loadAssignables();
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDraft = () => {
+    loadAssignables();
+    setIsDraftModalOpen(true);
+  };
+
+  const allCandidateStudents = (assignables?.users || [])
+    .filter((u) => u.role === "STUDENT")
+    .map((u) => {
+      const uCampus = assignables?.campuses.find((c) => c.id === u.campus_id);
+      const uTeam = assignables?.teams.find((t) => t.id === u.team_id);
+      return {
+        ...u,
+        campus_name: uCampus?.name,
+        team_name: uTeam?.name,
+      };
+    });
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16 font-sans">
@@ -65,7 +103,7 @@ export function TeamDetailView({
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setIsEditModalOpen(true)}
+            onClick={handleOpenEdit}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-sm"
           >
             <Edit3 className="w-3.5 h-3.5 text-pgc-gold" />
@@ -73,7 +111,7 @@ export function TeamDetailView({
           </button>
 
           <button
-            onClick={() => setIsDraftModalOpen(true)}
+            onClick={handleOpenDraft}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover transition-all active:scale-[0.98] cursor-pointer shadow-[0_0_15px_rgba(227,59,41,0.25)]"
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -161,7 +199,7 @@ export function TeamDetailView({
                 </Link>
               ) : (
                 <button
-                  onClick={() => setIsEditModalOpen(true)}
+                  onClick={handleOpenEdit}
                   className="text-xs font-bold text-pgc-gold hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>+ Appoint Captain</span>
@@ -231,32 +269,33 @@ export function TeamDetailView({
         showTeamColumn={false}
         teamId={team.id}
         campusId={campus?.id}
-        allCampuses={allCampuses}
-        allTeams={allTeams}
-        allCandidateStudents={allCandidateStudents}
         onRefresh={() => router.refresh()}
       />
 
-      {/* ── Edit Team Modal ────────────────────────────────────── */}
-      <EditTeamModal
-        isOpen={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        team={team}
-        campuses={allCampuses}
-        availableStudents={allCandidateStudents}
-        onSuccess={() => router.refresh()}
-      />
+      {/* ── Dynamic Lazy-Loaded Edit Team Modal ──────────────────── */}
+      {isEditModalOpen && (
+        <DynamicEditTeamModal
+          isOpen={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          team={team}
+          campuses={assignables?.campuses || (campus ? [campus] : [])}
+          availableStudents={allCandidateStudents}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
-      {/* ── Draft Player to Squad Modal ────────────────────────── */}
-      <AssignStudentModal
-        isOpen={isDraftModalOpen}
-        onOpenChange={setIsDraftModalOpen}
-        targetType="team"
-        targetId={team.id}
-        targetName={team.name}
-        availableStudents={allCandidateStudents}
-        onSuccess={() => router.refresh()}
-      />
+      {/* ── Dynamic Lazy-Loaded Draft Player Modal ──────────────── */}
+      {isDraftModalOpen && (
+        <DynamicAssignStudentModal
+          isOpen={isDraftModalOpen}
+          onOpenChange={setIsDraftModalOpen}
+          targetType="team"
+          targetId={team.id}
+          targetName={team.name}
+          availableStudents={allCandidateStudents}
+          onSuccess={() => router.refresh()}
+        />
+      )}
     </div>
   );
 }

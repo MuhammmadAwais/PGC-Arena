@@ -54,7 +54,7 @@ export default async function AdminLayout({
 
   // ── 5. Render dashboard shell ────────────────────────────────────
   return (
-    <div className="flex h-screen overflow-hidden bg-transparent">
+    <div className="flex h-screen overflow-hidden bg-transparent" suppressHydrationWarning>
       <Sidebar profile={profile as UserProfile} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />

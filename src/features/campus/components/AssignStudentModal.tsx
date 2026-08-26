@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserPlus, Flame, Building2, Search, Check, Loader2 } from "lucide-react";
+import { UserPlus, Flame, Building2, Search, Check, Loader2, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -58,9 +58,9 @@ export function AssignStudentModal({
   });
 
   const studentOptions: SearchableOption[] = eligibleStudents.map((s) => {
-    let sublabel = `Roll: ${s.roll_number}`;
+    let sublabel = `ID: ${s.roll_number}`;
     if (s.campus_name) sublabel += ` • ${s.campus_name}`;
-    if (s.team_name) sublabel += ` • Squad: ${s.team_name}`;
+    if (s.team_name) sublabel += ` • Squad: ${s.team_name} (Transfer)`;
 
     return {
       value: s.id,
@@ -99,48 +99,49 @@ export function AssignStudentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-md backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6 font-sans">
+      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6 font-sans">
         <DialogHeader>
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/25 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
-            {targetType === "campus" ? (
-              <Building2 className="w-5 h-5" />
-            ) : (
+            {targetType === "team" ? (
               <Flame className="w-5 h-5 text-pgc-red" />
+            ) : (
+              <Building2 className="w-5 h-5 text-cyan-400" />
             )}
           </div>
-          <DialogTitle className="font-display text-2xl font-black tracking-tight text-white">
-            {targetType === "campus" ? "Enroll Student to Campus" : "Draft Player to Squad"}
+          <DialogTitle className="font-display text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>{targetType === "team" ? "Draft Player to Squad" : "Assign Student to Campus"}</span>
           </DialogTitle>
           <DialogDescription className="text-slate-400 text-xs leading-relaxed">
-            {targetType === "campus"
-              ? `Select an existing student player from the institutional directory to affiliate with ${targetName}.`
-              : `Draft an eligible student player directly into ${targetName}'s active competitive roster.`}
+            Select an enrolled student athlete to roster into{" "}
+            <span className="text-white font-bold">{targetName}</span>.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleAssign} className="space-y-4.5 mt-3">
+        <form onSubmit={handleAssign} className="space-y-4 mt-3">
+          {error && (
+            <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-pgc-red font-sans flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-display">
-              Select Student Player *
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between font-display">
+              <span>Select Student Player *</span>
+              <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider">
+                {eligibleStudents.length} Candidates
+              </span>
             </label>
             <SearchableSelect
               options={studentOptions}
               value={selectedStudentId}
-              onChange={(val) => setSelectedStudentId(val)}
-              placeholder="Search by student name, roll # or IGN..."
-              searchPlaceholder="Filter candidate players..."
+              onChange={setSelectedStudentId}
+              placeholder="Search and select student..."
+              searchPlaceholder="Filter by name, IGN, or Roll No..."
               icon={<UserPlus className="w-4 h-4 text-cyan-400" />}
+              emptyMessage="No eligible candidate students found."
             />
-            <p className="text-[10px] text-slate-500 mt-1">
-              Showing {eligibleStudents.length} available students across campuses.
-            </p>
           </div>
-
-          {error && (
-            <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-pgc-red font-sans">
-              {error}
-            </div>
-          )}
 
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.06]">
             <button
@@ -153,9 +154,19 @@ export function AssignStudentModal({
             <button
               type="submit"
               disabled={isLoading || !selectedStudentId}
-              className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(6,182,212,0.3)] cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(6,182,212,0.3)] cursor-pointer flex items-center gap-1.5"
             >
-              {isLoading ? "Assigning..." : "Assign Player"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Assigning...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Confirm Draft</span>
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -72,7 +72,7 @@ function LiveClock() {
 
   if (!timeState) {
     return (
-      <div className="flex flex-col items-end leading-tight opacity-40">
+      <div className="flex flex-col items-end leading-tight opacity-40" suppressHydrationWarning>
         <span className="text-[13px] font-mono font-semibold text-white/80">
           --:--:-- <span className="text-white/30 font-normal">PKT</span>
         </span>
@@ -84,7 +84,7 @@ function LiveClock() {
   }
 
   return (
-    <div className="flex flex-col items-end leading-tight">
+    <div className="flex flex-col items-end leading-tight" suppressHydrationWarning>
       <span className="text-[13px] font-mono font-semibold text-white/80">
         {timeState.pkt} <span className="text-white/30 font-normal">PKT</span>
       </span>

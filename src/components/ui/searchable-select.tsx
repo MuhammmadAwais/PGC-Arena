@@ -153,7 +153,7 @@ export function SearchableSelect({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 top-full mt-1.5 w-full min-w-full sm:min-w-[280px] rounded-2xl bg-[#0B0C16]/98 border border-white/15 p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 max-h-64 flex flex-col",
+            "absolute z-50 top-full mt-1.5 w-full min-w-full rounded-2xl bg-[#0B0C16]/98 border border-white/15 p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 max-h-64 flex flex-col overflow-hidden",
             align === "end" ? "right-0 left-auto" : "left-0",
             dropdownClassName
           )}

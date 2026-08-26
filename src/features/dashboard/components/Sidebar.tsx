@@ -83,13 +83,17 @@ const navItems: NavItem[] = [
 ] as const;
 
 /** Derive initials from full name for avatar fallback */
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+function getInitials(name?: string | null): string {
+  if (!name) return "AD";
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "AD"
+  );
 }
 
 import { useState, useRef, useEffect } from "react";
@@ -247,8 +251,9 @@ export function Sidebar({ profile }: SidebarProps) {
                 "border border-pgc-red/30",
               ].join(" ")}
               aria-hidden="true"
+              suppressHydrationWarning
             >
-              {getInitials(profile.full_name)}
+              {getInitials(profile?.full_name)}
             </div>
 
             {/* Name & badge */}

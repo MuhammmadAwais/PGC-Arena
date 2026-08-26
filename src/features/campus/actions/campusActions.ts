@@ -94,10 +94,13 @@ export async function getCampusesData(): Promise<{
     const campusLogoMap = new Map((campusesRaw || []).map((c) => [c.id, c.logo_url]));
     const teamMap = new Map((teamsRaw || []).map((t) => [t.id, t]));
 
-    // Construct flat members list with dynamic is_team_leader derivation
+    // Construct flat members list with dynamic is_team_leader and campus inheritance derivation
     const allMembers: MemberItem[] = (usersRaw || []).map((u) => {
       const team = u.team_id ? teamMap.get(u.team_id) : undefined;
       const isLeader = team ? team.leader_id === u.id : false;
+      const effectiveCampusId = u.campus_id || team?.campus_id || null;
+      const campusName = effectiveCampusId ? campusMap.get(effectiveCampusId) || "Unknown Campus" : "Global / Head Office";
+      const campusLogo = effectiveCampusId ? campusLogoMap.get(effectiveCampusId) || null : null;
 
       return {
         id: u.id,
@@ -105,9 +108,9 @@ export async function getCampusesData(): Promise<{
         email: emailsMap.get(u.id) || `${u.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         role: u.role as UserRole,
         roll_number: u.roll_number,
-        campus_id: u.campus_id,
-        campus_name: u.campus_id ? campusMap.get(u.campus_id) || "Unknown Campus" : "Global / Head Office",
-        campus_logo_url: u.campus_id ? campusLogoMap.get(u.campus_id) || null : null,
+        campus_id: effectiveCampusId,
+        campus_name: campusName,
+        campus_logo_url: campusLogo,
         team_id: u.team_id,
         team_name: team ? team.name : undefined,
         team_logo_url: team ? team.logo_url : undefined,
@@ -148,7 +151,10 @@ export async function getCampusesData(): Promise<{
     // Construct hierarchical Campuses list
     const campuses: CampusItem[] = (campusesRaw || []).map((c) => {
       const campusTeams = allTeams.filter((t) => t.campus_id === c.id);
-      const campusMembers = allMembers.filter((m) => m.campus_id === c.id);
+      const campusTeamIds = new Set(campusTeams.map((t) => t.id));
+      const campusMembers = allMembers.filter(
+        (m) => m.campus_id === c.id || (m.team_id && campusTeamIds.has(m.team_id))
+      );
       const managerMember = campusMembers.find((m) => m.role === "CAMPUS_MANAGER");
       const teachers = campusMembers.filter((m) => m.role === "TEACHER");
       const students = campusMembers.filter((m) => m.role === "STUDENT");
@@ -292,25 +298,58 @@ export async function createTeamAction(data: {
  * Server Action: Add a new Member (Student, Teacher, Manager)
  */
 export async function addMemberAction(data: {
-  full_name: string;
+  fullName?: string;
+  full_name?: string;
   email: string;
-  password: string;
+  password?: string;
   role: "SUPER_ADMIN" | "CAMPUS_MANAGER" | "TEACHER" | "STUDENT";
-  roll_number: string;
+  rollNumber?: string;
+  roll_number?: string;
+  campusId?: string | null;
   campus_id?: string | null;
+  teamId?: string | null;
   team_id?: string | null;
   ign?: string | null;
+  isCaptain?: boolean;
   is_captain?: boolean;
+  avatarUrl?: string | null;
   avatar_url?: string | null;
 }) {
-  const result = addMemberSchema.safeParse(data);
+  const normalizedData = {
+    full_name: data.full_name || data.fullName,
+    email: data.email,
+    password: data.password || "PgcArena123!",
+    role: data.role,
+    roll_number: data.roll_number || data.rollNumber,
+    campus_id: data.campus_id || data.campusId || null,
+    team_id: data.team_id || data.teamId || null,
+    ign: data.ign || null,
+    is_captain: data.is_captain ?? data.isCaptain ?? false,
+    avatar_url: data.avatar_url || data.avatarUrl || null,
+  };
+
+  const result = addMemberSchema.safeParse(normalizedData);
   if (!result.success) {
     return { error: result.error.issues[0].message };
   }
 
-  const { full_name, email, password, role, roll_number, campus_id, team_id, ign, is_captain, avatar_url } = result.data;
+  const { full_name, email, password, role, roll_number, ign, is_captain, avatar_url } = result.data;
+  let campus_id = result.data.campus_id || null;
+  const team_id = result.data.team_id || null;
 
   try {
+    // If team_id is provided but campus_id is null, inherit campus from team
+    if (!campus_id && team_id) {
+      const { data: teamData } = await supabaseAdmin
+        .from("teams")
+        .select("campus_id")
+        .eq("id", team_id)
+        .maybeSingle();
+      if (teamData?.campus_id) {
+        campus_id = teamData.campus_id;
+      }
+    }
+
     // 1. Create Auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -352,7 +391,7 @@ export async function addMemberAction(data: {
     }
 
     revalidatePath("/admin/campuses");
-    return { success: true, message: `${full_name} has been added successfully.` };
+    return { success: true, message: `${full_name} has been enrolled successfully.` };
   } catch (error: any) {
     console.error("Add Member Error:", error);
     return { error: error.message || "An unexpected error occurred." };
@@ -560,115 +599,102 @@ export async function deleteMemberAction(
 }
 
 /**
- * High-Speed Single Campus Fetcher
+ * High-Speed Single Campus Fetcher (Architecturally Optimized - Single Roundtrip Batch)
  */
 export async function getSingleCampusData(campusId: string) {
   try {
-    const { data: campus, error: campusError } = await supabaseAdmin
-      .from("campuses")
-      .select("*")
-      .eq("id", campusId)
-      .single();
-
-    if (campusError || !campus) return null;
-
-    // Concurrently fetch leadership, squads, and enrolled students
-    const [managerRes, teachersRes, teamsRes, studentsRes] = await Promise.all([
+    // Concurrently fetch campus, all campus users, and all campus squads
+    const [campusRes, directUsersRes, teamsRes] = await Promise.all([
       supabaseAdmin
-        .from("users")
-        .select("*")
-        .eq("campus_id", campusId)
-        .eq("role", "CAMPUS_MANAGER")
+        .from("campuses")
+        .select("id, name, region, logo_url, banner_url, created_at")
+        .eq("id", campusId)
         .maybeSingle(),
       supabaseAdmin
         .from("users")
-        .select("*")
-        .eq("campus_id", campusId)
-        .eq("role", "TEACHER"),
-      supabaseAdmin
-        .from("teams")
-        .select("*, leader:users!leader_id(id, full_name, ign, avatar_url, roll_number)")
+        .select("id, full_name, role, roll_number, ign, avatar_url, campus_id, team_id")
         .eq("campus_id", campusId),
       supabaseAdmin
-        .from("users")
-        .select("*, team:teams(id, name)")
-        .eq("campus_id", campusId)
-        .eq("role", "STUDENT"),
+        .from("teams")
+        .select("id, name, campus_id, leader_id, elo_rating, logo_url, banner_url, leader:users!leader_id(id, full_name, ign, avatar_url, roll_number)")
+        .eq("campus_id", campusId),
     ]);
+
+    const campus = campusRes.data;
+    if (campusRes.error || !campus) return null;
 
     const teams = teamsRes.data || [];
     const teamIds = teams.map((t) => t.id);
+    const teamIdSet = new Set(teamIds);
 
-    // Fetch team members if any squads exist
-    let teamMembers: any[] = [];
+    // Also fetch squad members if any belong to squads in this campus
+    let squadUsers: any[] = [];
     if (teamIds.length > 0) {
-      const { data: tm } = await supabaseAdmin
+      const { data: su } = await supabaseAdmin
         .from("users")
-        .select("*")
+        .select("id, full_name, role, roll_number, ign, avatar_url, campus_id, team_id")
         .in("team_id", teamIds);
-      teamMembers = tm || [];
+      squadUsers = su || [];
     }
 
-    // Map emails
-    let emailsMap = new Map<string, string>();
-    try {
-      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-      if (authUsers?.users) {
-        for (const u of authUsers.users) {
-          if (u.email) emailsMap.set(u.id, u.email);
-        }
+    // Merge direct users and squad users by user ID
+    const userMap = new Map<string, any>();
+    for (const u of directUsersRes.data || []) {
+      userMap.set(u.id, u);
+    }
+    for (const u of squadUsers) {
+      if (!userMap.has(u.id)) {
+        userMap.set(u.id, u);
       }
-    } catch {
-      // ignore
     }
 
-    const populatedTeams = teams.map((team) => ({
-      ...team,
-      members: teamMembers
-        .filter((m) => m.team_id === team.id)
-        .map((m) => ({
+    const allUsers = Array.from(userMap.values());
+
+    // Segregate users in-memory (0 extra roundtrips)
+    const manager = allUsers.find((u) => u.role === "CAMPUS_MANAGER") || null;
+    const teachers = allUsers.filter((u) => u.role === "TEACHER");
+    const directStudents = allUsers.filter((u) => u.role === "STUDENT");
+
+    // Populate team rosters from campus users
+    const populatedTeams = teams.map((team) => {
+      const squadPlayers = directStudents.filter((m) => m.team_id === team.id);
+      return {
+        ...team,
+        members: squadPlayers.map((m) => ({
           ...m,
-          email: emailsMap.get(m.id) || `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          email: `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
           is_team_leader: team.leader_id === m.id,
         })),
-      member_count: teamMembers.filter((m) => m.team_id === team.id).length,
-    }));
+        member_count: squadPlayers.length,
+      };
+    });
 
-    // Merge students from direct campus assignment AND squad membership
+    // Merge students
     const studentMap = new Map<string, any>();
-    for (const s of (studentsRes.data || [])) {
+    for (const s of directStudents) {
+      const teamObj = teams.find((t) => t.id === s.team_id);
       studentMap.set(s.id, {
         ...s,
-        email: emailsMap.get(s.id) || `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
-        team_name: s.team?.name || undefined,
-        is_team_leader: s.team_id ? teams.find((t) => t.id === s.team_id)?.leader_id === s.id : false,
+        email: `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        team_name: teamObj?.name || undefined,
+        is_team_leader: s.team_id && teamIdSet.has(s.team_id)
+          ? teamObj?.leader_id === s.id
+          : false,
       });
-    }
-
-    for (const tm of teamMembers) {
-      if (tm.role === "STUDENT" && !studentMap.has(tm.id)) {
-        const teamObj = teams.find((t) => t.id === tm.team_id);
-        studentMap.set(tm.id, {
-          ...tm,
-          email: emailsMap.get(tm.id) || `${tm.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
-          team_name: teamObj?.name || undefined,
-          is_team_leader: teamObj?.leader_id === tm.id,
-        });
-      }
     }
 
     const allCampusStudents = Array.from(studentMap.values());
 
-    const enrichedManager = managerRes.data
+    const enrichedManager = manager
       ? {
-          ...managerRes.data,
-          email: emailsMap.get(managerRes.data.id) || `${managerRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          ...manager,
+          email: `${manager.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         }
       : null;
 
-    const enrichedTeachers = (teachersRes.data || []).map((t) => ({
+    const enrichedTeachers = teachers.map((t) => ({
       ...t,
-      email: emailsMap.get(t.id) || `${t.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      email: `${t.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
     }));
 
     return {
@@ -684,14 +710,16 @@ export async function getSingleCampusData(campusId: string) {
   }
 }
 
+
+
 /**
- * High-Speed Single Team Fetcher
+ * High-Speed Single Team Fetcher (Architecturally Optimized - Single Roundtrip Batch)
  */
 export async function getSingleTeamData(teamId: string) {
   try {
     const { data: team, error: teamError } = await supabaseAdmin
       .from("teams")
-      .select("*")
+      .select("id, name, campus_id, leader_id, elo_rating, logo_url, banner_url, created_at")
       .eq("id", teamId)
       .maybeSingle();
 
@@ -699,30 +727,28 @@ export async function getSingleTeamData(teamId: string) {
 
     const [campusRes, leaderRes, membersRes] = await Promise.all([
       team.campus_id
-        ? supabaseAdmin.from("campuses").select("*").eq("id", team.campus_id).maybeSingle()
+        ? supabaseAdmin
+            .from("campuses")
+            .select("id, name, region, logo_url, banner_url")
+            .eq("id", team.campus_id)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
       team.leader_id
-        ? supabaseAdmin.from("users").select("*").eq("id", team.leader_id).maybeSingle()
+        ? supabaseAdmin
+            .from("users")
+            .select("id, full_name, role, roll_number, ign, avatar_url, campus_id, team_id")
+            .eq("id", team.leader_id)
+            .maybeSingle()
         : Promise.resolve({ data: null }),
-      supabaseAdmin.from("users").select("*").eq("team_id", teamId),
+      supabaseAdmin
+        .from("users")
+        .select("id, full_name, role, roll_number, ign, avatar_url, campus_id, team_id")
+        .eq("team_id", teamId),
     ]);
-
-    // Map emails
-    let emailsMap = new Map<string, string>();
-    try {
-      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-      if (authUsers?.users) {
-        for (const u of authUsers.users) {
-          if (u.email) emailsMap.set(u.id, u.email);
-        }
-      }
-    } catch {
-      // ignore
-    }
 
     const enrichedMembers = (membersRes.data || []).map((m) => ({
       ...m,
-      email: emailsMap.get(m.id) || `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      email: `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
       is_team_leader: team.leader_id === m.id,
       academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
     }));
@@ -730,7 +756,7 @@ export async function getSingleTeamData(teamId: string) {
     const enrichedLeader = leaderRes.data
       ? {
           ...leaderRes.data,
-          email: emailsMap.get(leaderRes.data.id) || `${leaderRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          email: `${leaderRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
           is_team_leader: true,
           academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
         }
@@ -749,13 +775,13 @@ export async function getSingleTeamData(teamId: string) {
 }
 
 /**
- * High-Speed Single User Profile Fetcher
+ * High-Speed Single User Profile Fetcher (Architecturally Optimized)
  */
 export async function getSingleUserData(userId: string) {
   try {
     const { data: user, error: userError } = await supabaseAdmin
       .from("users")
-      .select("*")
+      .select("id, full_name, role, roll_number, ign, avatar_url, campus_id, team_id")
       .eq("id", userId)
       .maybeSingle();
 
@@ -764,20 +790,19 @@ export async function getSingleUserData(userId: string) {
       return null;
     }
 
-    // 1. Fetch team if assigned or leading
+    // 1. Concurrently fetch team and/or led team
     let teamData: any = null;
     if (user.team_id) {
       const { data: team } = await supabaseAdmin
         .from("teams")
-        .select("*")
+        .select("id, name, campus_id, leader_id, elo_rating, logo_url, banner_url")
         .eq("id", user.team_id)
         .maybeSingle();
       teamData = team;
     } else {
-      // Check if user is leader of any team
       const { data: ledTeam } = await supabaseAdmin
         .from("teams")
-        .select("*")
+        .select("id, name, campus_id, leader_id, elo_rating, logo_url, banner_url")
         .eq("leader_id", user.id)
         .maybeSingle();
       if (ledTeam) {
@@ -785,27 +810,16 @@ export async function getSingleUserData(userId: string) {
       }
     }
 
-    // 2. Fetch campus (from user.campus_id OR teamData.campus_id)
+    // 2. Fetch campus
     const effectiveCampusId = user.campus_id || teamData?.campus_id;
     let campusData: any = null;
     if (effectiveCampusId) {
       const { data: campus } = await supabaseAdmin
         .from("campuses")
-        .select("*")
+        .select("id, name, region, logo_url, banner_url")
         .eq("id", effectiveCampusId)
         .maybeSingle();
       campusData = campus;
-    }
-
-    // 3. Fetch auth email for complete admin profile visibility
-    let authEmail = "";
-    try {
-      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
-      if (authData?.user?.email) {
-        authEmail = authData.user.email;
-      }
-    } catch {
-      // ignore
     }
 
     const isLeader = teamData ? teamData.leader_id === user.id : false;
@@ -814,7 +828,7 @@ export async function getSingleUserData(userId: string) {
     return {
       user: {
         ...user,
-        email: authEmail || `${user.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        email: `${user.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         is_team_leader: isLeader,
         elo_rating: eloRating,
       },

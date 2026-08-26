@@ -13,26 +13,44 @@ import {
   Trophy,
   Crown,
   Users,
+  GraduationCap,
 } from "lucide-react";
 
+import dynamic from "next/dynamic";
 import { useCampusStore } from "@/features/campus/store/useCampusStore";
 import type { CampusItem, SavedFilterPreset } from "@/features/campus/types/campusTypes";
 import { CampusHierarchyView } from "@/features/campus/components/CampusHierarchyView";
 import { GlobalDirectoryView } from "@/features/campus/components/GlobalDirectoryView";
 import { CampusFilterBar } from "@/features/campus/components/CampusFilterBar";
 import { SavedListsBar } from "@/features/campus/components/SavedListsBar";
-import { CreateCampusModal } from "@/features/campus/components/CreateCampusModal";
-import { CreateTeamModal } from "@/features/campus/components/CreateTeamModal";
-import { AddMemberModal } from "@/features/campus/components/AddMemberModal";
-import {
-  DeleteConfirmationModal,
-  type DeletableEntityType,
-} from "@/features/campus/components/DeleteConfirmationModal";
+import type { DeletableEntityType } from "@/features/campus/components/DeleteConfirmationModal";
 import {
   deleteCampusAction,
   deleteTeamAction,
   deleteMemberAction,
 } from "@/features/campus/actions/campusActions";
+
+// ── Dynamic Lazy-Loaded Modals (Code-Split for speed) ─────────────
+const CreateCampusModal = dynamic(
+  () => import("@/features/campus/components/CreateCampusModal").then((m) => m.CreateCampusModal),
+  { ssr: false }
+);
+const CreateTeamModal = dynamic(
+  () => import("@/features/campus/components/CreateTeamModal").then((m) => m.CreateTeamModal),
+  { ssr: false }
+);
+const AddStudentModal = dynamic(
+  () => import("@/features/campus/components/AddStudentModal").then((m) => m.AddStudentModal),
+  { ssr: false }
+);
+const AddMemberModal = dynamic(
+  () => import("@/features/campus/components/AddMemberModal").then((m) => m.AddMemberModal),
+  { ssr: false }
+);
+const DeleteConfirmationModal = dynamic(
+  () => import("@/features/campus/components/DeleteConfirmationModal").then((m) => m.DeleteConfirmationModal),
+  { ssr: false }
+);
 
 export default function CampusesAndTeamsPage() {
   const router = useRouter();
@@ -59,6 +77,7 @@ export default function CampusesAndTeamsPage() {
   // Modals & Selected items state
   const [isCreateCampusOpen, setIsCreateCampusOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [targetCampusForAction, setTargetCampusForAction] = useState<CampusItem | null>(null);
 
@@ -320,12 +339,12 @@ export default function CampusesAndTeamsPage() {
           <button
             onClick={() => {
               setTargetCampusForAction(null);
-              setIsCreateCampusOpen(true);
+              setIsAddStudentOpen(true);
             }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(227,59,41,0.25)] cursor-pointer font-sans"
           >
-            <Plus className="w-4 h-4" />
-            <span>Create Campus</span>
+            <GraduationCap className="w-4 h-4" />
+            <span>Enroll Student</span>
           </button>
 
           <button
@@ -336,7 +355,18 @@ export default function CampusesAndTeamsPage() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans"
           >
             <Flame className="w-4 h-4 text-pgc-red" />
-            <span>Create Team</span>
+            <span>Create Squad</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setTargetCampusForAction(null);
+              setIsCreateCampusOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans"
+          >
+            <Plus className="w-4 h-4 text-cyan-400" />
+            <span>Create Campus</span>
           </button>
 
           <button
@@ -344,10 +374,10 @@ export default function CampusesAndTeamsPage() {
               setTargetCampusForAction(null);
               setIsAddMemberOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-slate-300 hover:text-white text-xs font-bold active:scale-[0.98] transition-all cursor-pointer font-sans"
           >
-            <UserPlus className="w-4 h-4 text-pgc-emerald" />
-            <span>Add Member</span>
+            <UserPlus className="w-4 h-4 text-purple-400" />
+            <span>Add Faculty / Staff</span>
           </button>
         </div>
       </div>
@@ -461,6 +491,10 @@ export default function CampusesAndTeamsPage() {
             setTargetCampusForAction(campus);
             setIsCreateTeamOpen(true);
           }}
+          onAddStudentForCampus={(campus) => {
+            setTargetCampusForAction(campus);
+            setIsAddStudentOpen(true);
+          }}
           onAddMemberForCampus={(campus) => {
             setTargetCampusForAction(campus);
             setIsAddMemberOpen(true);
@@ -528,6 +562,15 @@ export default function CampusesAndTeamsPage() {
         onOpenChange={setIsCreateTeamOpen}
         campuses={campuses}
         allStudents={allMembers.filter((m) => m.role === "STUDENT")}
+        defaultCampusId={targetCampusForAction?.id || null}
+        onSuccess={() => fetchData(true)}
+      />
+
+      <AddStudentModal
+        isOpen={isAddStudentOpen}
+        onOpenChange={setIsAddStudentOpen}
+        campuses={campuses}
+        teams={allTeams}
         defaultCampusId={targetCampusForAction?.id || null}
         onSuccess={() => fetchData(true)}
       />

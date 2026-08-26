@@ -69,13 +69,19 @@ export function EditCampusModal({
       sublabel: "Leave regional leadership vacant",
       icon: <Shield className="w-4 h-4 text-white/30" />,
     },
-    ...availableManagers.map((m) => ({
-      value: m.id,
-      label: m.full_name,
-      sublabel: m.roll_number ? `ID: ${m.roll_number}` : m.email,
-      avatarUrl: m.avatar_url,
-      icon: <Shield className="w-4 h-4 text-cyan-400" />,
-    })),
+    ...availableManagers.map((m: any) => {
+      const isAlreadyManagingOther = m.campus_id && m.campus_id !== campus.id;
+      return {
+        value: m.id,
+        label: m.full_name,
+        sublabel: isAlreadyManagingOther
+          ? `Managing: ${m.campus_name || "Another Branch"} (Will Transfer)`
+          : m.roll_number ? `ID: ${m.roll_number}` : m.email,
+        badge: isAlreadyManagingOther ? "Transfer" : undefined,
+        avatarUrl: m.avatar_url,
+        icon: <Shield className={`w-4 h-4 ${isAlreadyManagingOther ? "text-amber-400" : "text-cyan-400"}`} />,
+      };
+    }),
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
