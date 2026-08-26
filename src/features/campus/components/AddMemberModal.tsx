@@ -32,6 +32,7 @@ import {
 } from "../actions/campusActions";
 import type { CampusItem, TeamItem, UserRole } from "../types/campusTypes";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
+import { CloudinaryUploadZone } from "@/components/ui/CloudinaryUploadZone";
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export function AddMemberModal({
   const [campusId, setCampusId] = useState(defaultCampusId || (campuses[0]?.id ?? ""));
   const [teamId, setTeamId] = useState("");
   const [ign, setIgn] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isCaptain, setIsCaptain] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,10 +181,10 @@ export function AddMemberModal({
       sublabel: "Player will not be in an active squad initially",
       icon: <Flame className="w-4 h-4 text-white/30" />,
     },
-    ...availableTeams.map((t) => ({
+    ...availableTeams.map((t: any) => ({
       value: t.id,
       label: t.name,
-      sublabel: `${t.members.length} active players`,
+      sublabel: `${t.member_count ?? t.members?.length ?? 0} active players`,
       avatarUrl: t.logo_url,
       icon: <Flame className="w-4 h-4 text-pgc-red" />,
     })),
@@ -226,6 +228,7 @@ export function AddMemberModal({
       team_id: role === "STUDENT" && teamId ? teamId : null,
       ign: role === "STUDENT" && ign ? ign.trim() : null,
       is_captain: role === "STUDENT" && isCaptain,
+      avatar_url: avatarUrl || undefined,
     });
 
     if (result.error) {
@@ -236,6 +239,7 @@ export function AddMemberModal({
       setEmail("");
       setRollNumber("");
       setIgn("");
+      setAvatarUrl(null);
       setIgnStatus("idle");
       setRollStatus("idle");
       setIsCaptain(false);
@@ -506,6 +510,19 @@ export function AddMemberModal({
               )}
             </div>
           )}
+
+          {/* Cloudinary Profile Avatar Upload */}
+          <div className="pt-1">
+            <CloudinaryUploadZone
+              value={avatarUrl}
+              onUpload={(url) => setAvatarUrl(url)}
+              onRemove={() => setAvatarUrl(null)}
+              variant="avatar"
+              label="Member Profile Headshot"
+              hint="Square (1:1 Aspect Ratio)"
+              folder="users/avatars"
+            />
+          </div>
 
           {error && (
             <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-pgc-red font-sans">

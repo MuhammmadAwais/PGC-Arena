@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Flame, Crown, Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Flame, Crown, Building2, Edit3, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,42 +10,66 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createTeamAction } from "../actions/campusActions";
-import type { CampusItem, MemberItem } from "../types/campusTypes";
-import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
+import { updateTeamAction } from "../actions/campusActions";
 import { CloudinaryUploadZone } from "@/components/ui/CloudinaryUploadZone";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 
-interface CreateTeamModalProps {
+interface EditTeamModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  campuses: CampusItem[];
-  allStudents: MemberItem[];
-  defaultCampusId?: string | null;
+  team: {
+    id: string;
+    name: string;
+    campus_id: string;
+    leader_id?: string | null;
+    logo_url?: string | null;
+    banner_url?: string | null;
+  };
+  campuses: {
+    id: string;
+    name: string;
+    region?: string | null;
+    logo_url?: string | null;
+  }[];
+  availableStudents?: {
+    id: string;
+    full_name: string;
+    email?: string;
+    roll_number?: string;
+    ign?: string | null;
+    avatar_url?: string | null;
+    campus_id?: string | null;
+  }[];
   onSuccess?: () => void;
 }
 
-export function CreateTeamModal({
+export function EditTeamModal({
   isOpen,
   onOpenChange,
+  team,
   campuses,
-  allStudents,
-  defaultCampusId,
+  availableStudents = [],
   onSuccess,
-}: CreateTeamModalProps) {
-  const [name, setName] = useState("");
-  const [campusId, setCampusId] = useState(defaultCampusId || (campuses[0]?.id ?? ""));
-  const [leaderId, setLeaderId] = useState<string>("");
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+}: EditTeamModalProps) {
+  const [name, setName] = useState(team.name || "");
+  const [campusId, setCampusId] = useState(team.campus_id || "");
+  const [leaderId, setLeaderId] = useState<string>(team.leader_id || "");
+  const [logoUrl, setLogoUrl] = useState<string | null>(team.logo_url || null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(team.banner_url || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter students by selected campus
-  const availableStudents = allStudents.filter(
-    (s) => s.role === "STUDENT" && (!campusId || s.campus_id === campusId)
-  );
+  // Sync state whenever modal opens or team prop changes
+  useEffect(() => {
+    setName(team.name || "");
+    setCampusId(team.campus_id || "");
+    setLeaderId(team.leader_id || "");
+    setLogoUrl(team.logo_url || null);
+    setBannerUrl(team.banner_url || null);
+    setError(null);
+  }, [team, isOpen]);
 
-  // Format Campus options for SearchableSelect
+  // Campus options for SearchableSelect
   const campusOptions: SearchableOption[] = campuses.map((c) => ({
     value: c.id,
     label: c.name,
@@ -54,18 +78,22 @@ export function CreateTeamModal({
     icon: <Building2 className="w-4 h-4 text-white/50" />,
   }));
 
-  // Format Captain options for SearchableSelect
+  // Students eligible for captaincy in this campus or overall
+  const campusStudents = availableStudents.filter(
+    (s) => !campusId || s.campus_id === campusId
+  );
+
   const captainOptions: SearchableOption[] = [
     {
       value: "",
-      label: "Select Captain (or assign later)",
-      sublabel: "Squad will start without an appointed captain",
+      label: "Unassigned (No Captain)",
+      sublabel: "Leave squad leadership vacant",
       icon: <Crown className="w-4 h-4 text-white/30" />,
     },
-    ...availableStudents.map((s) => ({
+    ...campusStudents.map((s) => ({
       value: s.id,
       label: s.full_name,
-      sublabel: s.roll_number ? `Roll: ${s.roll_number}` : undefined,
+      sublabel: s.roll_number ? `Roll: ${s.roll_number}` : s.email,
       badge: s.ign ? `#${s.ign}` : undefined,
       avatarUrl: s.avatar_url,
       icon: <Crown className="w-4 h-4 text-pgc-gold" />,
@@ -79,24 +107,18 @@ export function CreateTeamModal({
     setIsLoading(true);
     setError(null);
 
-    // Initial ELO rating is strictly hardcoded to 0
-    const result = await createTeamAction({
+    const result = await updateTeamAction(team.id, {
       name: name.trim(),
       campus_id: campusId,
       leader_id: leaderId ? leaderId : null,
-      elo_rating: 0,
-      logo_url: logoUrl || undefined,
-      banner_url: bannerUrl || undefined,
+      logo_url: logoUrl,
+      banner_url: bannerUrl,
     });
 
     if (result.error) {
       setError(result.error);
       setIsLoading(false);
     } else {
-      setName("");
-      setLeaderId("");
-      setLogoUrl(null);
-      setBannerUrl(null);
       setIsLoading(false);
       onOpenChange(false);
       onSuccess?.();
@@ -105,23 +127,23 @@ export function CreateTeamModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
+      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6 font-sans">
         <DialogHeader>
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pgc-gold/25 to-pgc-gold/5 border border-pgc-gold/30 text-pgc-gold flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-            <Flame className="w-5 h-5 text-pgc-gold" />
+            <Edit3 className="w-5 h-5" />
           </div>
           <DialogTitle className="font-display text-2xl font-black tracking-tight text-white">
-            Create Esports Team
+            Edit Esports Squad
           </DialogTitle>
-          <DialogDescription className="text-slate-400 text-xs font-sans leading-relaxed">
-            Form a new competitive squad for tournament brackets, scrims, and campus matches.
+          <DialogDescription className="text-slate-400 text-xs leading-relaxed">
+            Update team name, affiliated campus branch, squad crest emblem, banner, and appoint or replace the team captain.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4.5 mt-3">
           {/* Team Name */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-display">
               Team Name *
             </label>
             <Input
@@ -130,14 +152,13 @@ export function CreateTeamModal({
               onChange={(e) => setName(e.target.value)}
               required
               className="h-11 bg-black/40 border-white/10 text-white placeholder-white/30 rounded-xl focus-visible:border-pgc-gold/60 focus-visible:ring-1 focus-visible:ring-pgc-gold/40"
-              autoFocus
             />
           </div>
 
           {/* Searchable Campus Selector */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
-              Assigned Campus *
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-display">
+              Assigned Campus Branch *
             </label>
             <SearchableSelect
               options={campusOptions}
@@ -154,16 +175,16 @@ export function CreateTeamModal({
 
           {/* Searchable Captain Selector */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between font-sans">
-              <span>Assign Team Captain</span>
-              <span className="text-[10px] text-pgc-gold font-semibold uppercase tracking-wider">Optional</span>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between font-display">
+              <span>Appoint Team Captain</span>
+              <span className="text-[10px] text-pgc-gold font-semibold uppercase tracking-wider">Leadership</span>
             </label>
             <SearchableSelect
               options={captainOptions}
               value={leaderId}
               onChange={(val) => setLeaderId(val)}
-              placeholder="Search student or assign later..."
-              searchPlaceholder="Search by student name, IGN or roll #..."
+              placeholder="Select captain or unassign..."
+              searchPlaceholder="Search student by name, IGN or roll #..."
               icon={<Crown className="w-4 h-4 text-pgc-gold" />}
               allowClear
             />
@@ -202,16 +223,16 @@ export function CreateTeamModal({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer font-sans"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2.5 rounded-xl bg-pgc-red text-white text-xs font-bold hover:bg-pgc-hover active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(227,59,41,0.3)] cursor-pointer font-sans"
+              className="px-5 py-2.5 rounded-xl bg-pgc-gold hover:bg-amber-400 text-black text-xs font-bold active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(245,158,11,0.3)] cursor-pointer"
             >
-              {isLoading ? "Creating Team..." : "Create Team"}
+              {isLoading ? "Saving Squad..." : "Save Squad Changes"}
             </button>
           </div>
         </form>

@@ -11,13 +11,17 @@ import type { CampusItem, MemberItem, TeamItem, UserRole } from "../types/campus
 const createCampusSchema = z.object({
   name: z.string().min(3, "Campus name must be at least 3 characters"),
   region: z.string().optional(),
+  logo_url: z.string().url().optional().nullable().or(z.literal("")),
+  banner_url: z.string().url().optional().nullable().or(z.literal("")),
 });
 
 const createTeamSchema = z.object({
   name: z.string().min(2, "Team name must be at least 2 characters"),
   campus_id: z.string().uuid("Invalid Campus ID"),
-  leader_id: z.string().uuid("Invalid Leader ID").optional().nullable(),
-  elo_rating: z.coerce.number().optional().default(1000),
+  leader_id: z.string().uuid("Invalid Leader ID").optional().nullable().or(z.literal("")),
+  elo_rating: z.coerce.number().optional().default(0),
+  logo_url: z.string().url().optional().nullable().or(z.literal("")),
+  banner_url: z.string().url().optional().nullable().or(z.literal("")),
 });
 
 const addMemberSchema = z.object({
@@ -26,10 +30,11 @@ const addMemberSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER", "STUDENT"]),
   roll_number: z.string().min(6, "Roll Number / Employee ID must be at least 6 characters"),
-  campus_id: z.string().uuid().optional().nullable(),
-  team_id: z.string().uuid().optional().nullable(),
+  campus_id: z.string().uuid().optional().nullable().or(z.literal("")),
+  team_id: z.string().uuid().optional().nullable().or(z.literal("")),
   ign: z.string().min(6, "In-Game Name (IGN) must be at least 6 characters").optional().nullable().or(z.literal("")),
   is_captain: z.boolean().optional().default(false),
+  avatar_url: z.string().url().optional().nullable().or(z.literal("")),
 });
 
 // ── Server Actions ───────────────────────────────────────────────
@@ -199,7 +204,12 @@ export async function getCampusesData(): Promise<{
 /**
  * Server Action: Create a new Campus
  */
-export async function createCampusAction(data: { name: string; region?: string }) {
+export async function createCampusAction(data: {
+  name: string;
+  region?: string;
+  logo_url?: string | null;
+  banner_url?: string | null;
+}) {
   const result = createCampusSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.issues[0].message };
@@ -212,7 +222,11 @@ export async function createCampusAction(data: { name: string; region?: string }
 
     const { data: newCampus, error } = await supabaseAdmin
       .from("campuses")
-      .insert({ name: formattedName })
+      .insert({
+        name: formattedName,
+        logo_url: data.logo_url || null,
+        banner_url: data.banner_url || null,
+      })
       .select()
       .single();
 
@@ -234,6 +248,8 @@ export async function createTeamAction(data: {
   campus_id: string;
   leader_id?: string | null;
   elo_rating?: number;
+  logo_url?: string | null;
+  banner_url?: string | null;
 }) {
   const result = createTeamSchema.safeParse(data);
   if (!result.success) {
@@ -247,7 +263,9 @@ export async function createTeamAction(data: {
         name: data.name,
         campus_id: data.campus_id,
         leader_id: data.leader_id || null,
-        elo_rating: data.elo_rating ?? 1000,
+        elo_rating: data.elo_rating ?? 0,
+        logo_url: data.logo_url || null,
+        banner_url: data.banner_url || null,
       })
       .select()
       .single();
@@ -283,13 +301,14 @@ export async function addMemberAction(data: {
   team_id?: string | null;
   ign?: string | null;
   is_captain?: boolean;
+  avatar_url?: string | null;
 }) {
   const result = addMemberSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.issues[0].message };
   }
 
-  const { full_name, email, password, role, roll_number, campus_id, team_id, ign, is_captain } = result.data;
+  const { full_name, email, password, role, roll_number, campus_id, team_id, ign, is_captain, avatar_url } = result.data;
 
   try {
     // 1. Create Auth user
@@ -315,6 +334,7 @@ export async function addMemberAction(data: {
       campus_id: campus_id || null,
       team_id: team_id || null,
       ign: ign || null,
+      avatar_url: avatar_url || null,
       is_first_login: false,
     });
 
@@ -804,5 +824,185 @@ export async function getSingleUserData(userId: string) {
   } catch (err) {
     console.error("Error in getSingleUserData:", err);
     return null;
+  }
+}
+
+/**
+ * Server Action: Update an existing Campus
+ */
+export async function updateCampusAction(
+  campusId: string,
+  data: {
+    name: string;
+    region?: string;
+    logo_url?: string | null;
+    banner_url?: string | null;
+    manager_id?: string | null;
+  }
+) {
+  try {
+    const formattedName =
+      data.region && !data.name.includes("(")
+        ? `${data.name} (${data.region})`
+        : data.name;
+
+    const { error: campusError } = await supabaseAdmin
+      .from("campuses")
+      .update({
+        name: formattedName,
+        logo_url: data.logo_url ?? null,
+        banner_url: data.banner_url ?? null,
+      })
+      .eq("id", campusId);
+
+    if (campusError) throw campusError;
+
+    // Manage Campus Manager Assignment
+    if (data.manager_id !== undefined) {
+      if (data.manager_id) {
+        // Unassign any manager currently attached to this campus
+        await supabaseAdmin
+          .from("users")
+          .update({ campus_id: null })
+          .eq("campus_id", campusId)
+          .eq("role", "CAMPUS_MANAGER");
+
+        // Assign the new manager
+        await supabaseAdmin
+          .from("users")
+          .update({ campus_id: campusId })
+          .eq("id", data.manager_id);
+      } else {
+        // If manager_id is null, unassign all managers from this campus
+        await supabaseAdmin
+          .from("users")
+          .update({ campus_id: null })
+          .eq("campus_id", campusId)
+          .eq("role", "CAMPUS_MANAGER");
+      }
+    }
+
+    revalidatePath("/admin/campuses");
+    revalidatePath(`/admin/campuses/${campusId}`);
+    return { success: true, message: `Campus "${data.name}" updated successfully!` };
+  } catch (error: any) {
+    console.error("Update Campus Error:", error);
+    return { error: error.message || "Failed to update campus." };
+  }
+}
+
+/**
+ * Server Action: Update an existing Esports Team
+ */
+export async function updateTeamAction(
+  teamId: string,
+  data: {
+    name: string;
+    campus_id: string;
+    leader_id?: string | null;
+    logo_url?: string | null;
+    banner_url?: string | null;
+  }
+) {
+  try {
+    const { error: teamError } = await supabaseAdmin
+      .from("teams")
+      .update({
+        name: data.name,
+        campus_id: data.campus_id,
+        leader_id: data.leader_id || null,
+        logo_url: data.logo_url ?? null,
+        banner_url: data.banner_url ?? null,
+      })
+      .eq("id", teamId);
+
+    if (teamError) throw teamError;
+
+    // If a new leader is assigned, assign their team_id and campus_id
+    if (data.leader_id) {
+      await supabaseAdmin
+        .from("users")
+        .update({ team_id: teamId, campus_id: data.campus_id })
+        .eq("id", data.leader_id);
+    }
+
+    revalidatePath("/admin/campuses");
+    revalidatePath(`/admin/teams/${teamId}`);
+    revalidatePath(`/admin/campuses/${data.campus_id}`);
+    return { success: true, message: `Team "${data.name}" updated successfully!` };
+  } catch (error: any) {
+    console.error("Update Team Error:", error);
+    return { error: error.message || "Failed to update team." };
+  }
+}
+
+/**
+ * Server Action: Assign Student to Team (or remove from team)
+ */
+export async function assignStudentToTeamAction(studentId: string, teamId: string | null) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("users")
+      .update({ team_id: teamId })
+      .eq("id", studentId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/campuses");
+    if (teamId) revalidatePath(`/admin/teams/${teamId}`);
+    return { success: true, message: "Student squad assignment updated." };
+  } catch (error: any) {
+    console.error("Assign Student to Team Error:", error);
+    return { error: error.message || "Failed to assign student to team." };
+  }
+}
+
+/**
+ * Server Action: Assign Student to Campus (or transfer)
+ */
+export async function assignStudentToCampusAction(studentId: string, campusId: string | null) {
+  try {
+    const updates: { campus_id: string | null; team_id?: string | null } = {
+      campus_id: campusId,
+    };
+    if (campusId === null) {
+      updates.team_id = null;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("users")
+      .update(updates)
+      .eq("id", studentId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/campuses");
+    if (campusId) revalidatePath(`/admin/campuses/${campusId}`);
+    return { success: true, message: "Student campus affiliation updated." };
+  } catch (error: any) {
+    console.error("Assign Student to Campus Error:", error);
+    return { error: error.message || "Failed to update campus affiliation." };
+  }
+}
+
+/**
+ * Server Action: Fetch assignable candidates (all students, managers, teachers, and campuses)
+ */
+export async function getAssignableDataAction() {
+  try {
+    const [campusesRes, usersRes, teamsRes] = await Promise.all([
+      supabaseAdmin.from("campuses").select("id, name, logo_url, region").order("name"),
+      supabaseAdmin.from("users").select("id, full_name, role, roll_number, ign, campus_id, team_id, avatar_url").order("full_name"),
+      supabaseAdmin.from("teams").select("id, name, campus_id, leader_id, logo_url").order("name"),
+    ]);
+
+    return {
+      campuses: campusesRes.data || [],
+      users: usersRes.data || [],
+      teams: teamsRes.data || [],
+    };
+  } catch (err: any) {
+    console.error("Error fetching assignable data:", err);
+    return { campuses: [], users: [], teams: [] };
   }
 }

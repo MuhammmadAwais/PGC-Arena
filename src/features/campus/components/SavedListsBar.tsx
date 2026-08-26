@@ -159,21 +159,65 @@ export function SavedListsBar({
     }
   };
 
-  const getIcon = (iconName: string, isActive: boolean) => {
-    const cls = `w-3.5 h-3.5 ${isActive ? "text-white" : "text-white/40"}`;
+  const getIcon = (iconName: string, isActive: boolean, isCustom?: boolean) => {
     switch (iconName) {
       case "star":
-        return <Star className={`w-3.5 h-3.5 ${isActive ? "text-pgc-gold fill-pgc-gold" : "text-pgc-gold/60"}`} />;
+        return (
+          <Star
+            className={`w-3.5 h-3.5 transition-all ${
+              isActive
+                ? "text-amber-300 fill-amber-300 scale-110"
+                : "text-amber-400/60 group-hover:text-amber-300"
+            }`}
+          />
+        );
       case "crown":
-        return <Trophy className={`w-3.5 h-3.5 ${isActive ? "text-pgc-gold" : "text-pgc-gold/60"}`} />;
+        return (
+          <Trophy
+            className={`w-3.5 h-3.5 transition-all ${
+              isActive
+                ? "text-pgc-gold fill-pgc-gold scale-110"
+                : "text-pgc-gold/60 group-hover:text-pgc-gold"
+            }`}
+          />
+        );
       case "users":
-        return <Users className={cls} />;
+        return (
+          <Users
+            className={`w-3.5 h-3.5 transition-all ${
+              isActive ? "text-cyan-300" : "text-white/40 group-hover:text-white"
+            }`}
+          />
+        );
       default:
-        return <Bookmark className={cls} />;
+        return (
+          <Bookmark
+            className={`w-3.5 h-3.5 transition-all ${
+              isActive
+                ? isCustom
+                  ? "text-cyan-300 fill-cyan-400/30 scale-110"
+                  : "text-white fill-white/30"
+                : "text-white/40 group-hover:text-white"
+            }`}
+          />
+        );
     }
   };
 
   const allPresets = [...DEFAULT_PRESETS, ...customPresets];
+
+  const handlePresetClick = (preset: SavedFilterPreset) => {
+    const isPresetActive =
+      activePresetId === preset.id ||
+      (preset.id === "starred" && Boolean(currentFilterState?.isStarredOnly));
+
+    // Toggle off: if clicked while active, toggle back to All Records
+    if (isPresetActive && preset.id !== "all") {
+      onSelectPreset(DEFAULT_PRESETS[0]);
+    } else {
+      onSelectPreset(preset);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between gap-3 bg-white/[0.02] border border-white/[0.08] p-2.5 px-4 rounded-2xl backdrop-blur-md">
@@ -213,22 +257,31 @@ export function SavedListsBar({
             const isPresetActive =
               activePresetId === preset.id ||
               (preset.id === "starred" && Boolean(currentFilterState?.isStarredOnly));
-            const isStarredActive = preset.id === "starred" && isPresetActive;
+            const isStarredActive = preset.id === "starred" && (isPresetActive || Boolean(currentFilterState?.isStarredOnly));
+            const isCustomActive = preset.isCustom && isPresetActive;
+            const isAllRecordsActive = preset.id === "all" && isPresetActive;
 
             return (
               <button
                 key={preset.id}
-                onClick={() => onSelectPreset(preset)}
-                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 ${
+                onClick={() => handlePresetClick(preset)}
+                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 ${
                   isStarredActive
-                    ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.35)] border font-bold"
+                    ? "bg-amber-500/25 border-amber-400 text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.4)] border ring-1 ring-amber-400/50 font-bold"
+                    : isCustomActive
+                    ? "bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-500/20 border-cyan-400 text-cyan-200 shadow-[0_0_18px_rgba(6,182,212,0.4)] border ring-1 ring-cyan-400/50 font-bold"
+                    : isAllRecordsActive
+                    ? "bg-white/15 border-white/30 text-white shadow-[0_0_12px_rgba(255,255,255,0.15)] border ring-1 ring-white/20 font-bold"
                     : isPresetActive
                     ? "bg-pgc-red text-white shadow-[0_0_15px_rgba(227,59,41,0.35)] border border-pgc-red font-bold"
-                    : "bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]"
+                    : "bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 font-medium"
                 }`}
               >
-                {getIcon(preset.iconName, isPresetActive)}
+                {getIcon(preset.iconName, isPresetActive, preset.isCustom)}
                 <span>{preset.label}</span>
+                {isPresetActive && preset.id !== "all" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse ml-0.5" />
+                )}
               </button>
             );
           })}

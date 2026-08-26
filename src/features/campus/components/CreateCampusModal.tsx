@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Plus, MapPin } from "lucide-react";
+import { Building2, Plus, MapPin, ImageIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createCampusAction } from "../actions/campusActions";
+import { CloudinaryUploadZone } from "@/components/ui/CloudinaryUploadZone";
 
 interface CreateCampusModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export function CreateCampusModal({
 }: CreateCampusModalProps) {
   const [name, setName] = useState("");
   const [region, setRegion] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +41,8 @@ export function CreateCampusModal({
     const result = await createCampusAction({
       name: name.trim(),
       region: region.trim() || undefined,
+      logo_url: logoUrl || undefined,
+      banner_url: bannerUrl || undefined,
     });
 
     if (result.error) {
@@ -46,6 +51,8 @@ export function CreateCampusModal({
     } else {
       setName("");
       setRegion("");
+      setLogoUrl(null);
+      setBannerUrl(null);
       setIsLoading(false);
       onOpenChange(false);
       onSuccess?.();
@@ -54,7 +61,7 @@ export function CreateCampusModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-md backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
+      <DialogContent className="bg-[#0B0C16]/98 border border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar backdrop-blur-2xl rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-6">
         <DialogHeader>
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pgc-red/25 to-pgc-red/5 border border-pgc-red/30 text-pgc-red flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(227,59,41,0.2)]">
             <Building2 className="w-5 h-5" />
@@ -70,7 +77,7 @@ export function CreateCampusModal({
         <form onSubmit={handleSubmit} className="space-y-4.5 mt-3">
           <div>
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block font-sans">
-              Campus Name
+              Campus Name *
             </label>
             <Input
               placeholder="e.g. PGC Alpha Campus"
@@ -95,6 +102,29 @@ export function CreateCampusModal({
                 className="h-11 pl-10 bg-black/40 border-white/10 text-white placeholder-white/30 rounded-xl focus-visible:border-pgc-red/60 focus-visible:ring-1 focus-visible:ring-pgc-red/40"
               />
             </div>
+          </div>
+
+          {/* Cloudinary Media Uploads Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <CloudinaryUploadZone
+              value={logoUrl}
+              onUpload={(url) => setLogoUrl(url)}
+              onRemove={() => setLogoUrl(null)}
+              variant="avatar"
+              label="Campus Emblem Logo"
+              hint="Square (1:1 Aspect Ratio)"
+              folder="campuses/logos"
+            />
+
+            <CloudinaryUploadZone
+              value={bannerUrl}
+              onUpload={(url) => setBannerUrl(url)}
+              onRemove={() => setBannerUrl(null)}
+              variant="banner"
+              label="Campus Master Banner"
+              hint="Panoramic (16:9 / 3:1)"
+              folder="campuses/banners"
+            />
           </div>
 
           {error && (
