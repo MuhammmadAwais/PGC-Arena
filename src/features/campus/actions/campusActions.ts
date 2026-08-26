@@ -538,3 +538,214 @@ export async function deleteMemberAction(
     return { error: err.message || "Failed to delete member." };
   }
 }
+
+/**
+ * High-Speed Single Campus Fetcher
+ */
+export async function getSingleCampusData(campusId: string) {
+  try {
+    const { data: campus, error: campusError } = await supabaseAdmin
+      .from("campuses")
+      .select("*")
+      .eq("id", campusId)
+      .single();
+
+    if (campusError || !campus) return null;
+
+    // Concurrently fetch leadership, squads, and enrolled students
+    const [managerRes, teachersRes, teamsRes, studentsRes] = await Promise.all([
+      supabaseAdmin
+        .from("users")
+        .select("*")
+        .eq("campus_id", campusId)
+        .eq("role", "CAMPUS_MANAGER")
+        .maybeSingle(),
+      supabaseAdmin
+        .from("users")
+        .select("*")
+        .eq("campus_id", campusId)
+        .eq("role", "TEACHER"),
+      supabaseAdmin
+        .from("teams")
+        .select("*, leader:users!leader_id(id, full_name, ign, avatar_url, roll_number)")
+        .eq("campus_id", campusId),
+      supabaseAdmin
+        .from("users")
+        .select("*, team:teams(id, name)")
+        .eq("campus_id", campusId)
+        .eq("role", "STUDENT"),
+    ]);
+
+    const teams = teamsRes.data || [];
+    const teamIds = teams.map((t) => t.id);
+
+    // Fetch team members if any squads exist
+    let teamMembers: any[] = [];
+    if (teamIds.length > 0) {
+      const { data: tm } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .in("team_id", teamIds);
+      teamMembers = tm || [];
+    }
+
+    // Map emails
+    let emailsMap = new Map<string, string>();
+    try {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      if (authUsers?.users) {
+        for (const u of authUsers.users) {
+          if (u.email) emailsMap.set(u.id, u.email);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const populatedTeams = teams.map((team) => ({
+      ...team,
+      members: teamMembers
+        .filter((m) => m.team_id === team.id)
+        .map((m) => ({
+          ...m,
+          email: emailsMap.get(m.id) || `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          is_team_leader: team.leader_id === m.id,
+        })),
+      member_count: teamMembers.filter((m) => m.team_id === team.id).length,
+    }));
+
+    const enrichedStudents = (studentsRes.data || []).map((s: any) => ({
+      ...s,
+      email: emailsMap.get(s.id) || `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      team_name: s.team?.name || undefined,
+      is_team_leader: s.team_id ? teams.find((t) => t.id === s.team_id)?.leader_id === s.id : false,
+    }));
+
+    const enrichedManager = managerRes.data
+      ? {
+          ...managerRes.data,
+          email: emailsMap.get(managerRes.data.id) || `${managerRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        }
+      : null;
+
+    const enrichedTeachers = (teachersRes.data || []).map((t) => ({
+      ...t,
+      email: emailsMap.get(t.id) || `${t.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+    }));
+
+    return {
+      campus,
+      manager: enrichedManager,
+      teachers: enrichedTeachers,
+      teams: populatedTeams,
+      students: enrichedStudents,
+    };
+  } catch (err) {
+    console.error("Error in getSingleCampusData:", err);
+    return null;
+  }
+}
+
+/**
+ * High-Speed Single Team Fetcher
+ */
+export async function getSingleTeamData(teamId: string) {
+  try {
+    const { data: team, error: teamError } = await supabaseAdmin
+      .from("teams")
+      .select("*, campus:campuses(*)")
+      .eq("id", teamId)
+      .single();
+
+    if (teamError || !team) return null;
+
+    const [leaderRes, membersRes] = await Promise.all([
+      team.leader_id
+        ? supabaseAdmin.from("users").select("*").eq("id", team.leader_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabaseAdmin.from("users").select("*").eq("team_id", teamId),
+    ]);
+
+    // Map emails
+    let emailsMap = new Map<string, string>();
+    try {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      if (authUsers?.users) {
+        for (const u of authUsers.users) {
+          if (u.email) emailsMap.set(u.id, u.email);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const enrichedMembers = (membersRes.data || []).map((m) => ({
+      ...m,
+      email: emailsMap.get(m.id) || `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      is_team_leader: team.leader_id === m.id,
+      academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
+    }));
+
+    const enrichedLeader = leaderRes.data
+      ? {
+          ...leaderRes.data,
+          email: emailsMap.get(leaderRes.data.id) || `${leaderRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          is_team_leader: true,
+          academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
+        }
+      : null;
+
+    return {
+      team,
+      campus: team.campus || null,
+      leader: enrichedLeader,
+      members: enrichedMembers,
+    };
+  } catch (err) {
+    console.error("Error in getSingleTeamData:", err);
+    return null;
+  }
+}
+
+/**
+ * High-Speed Single User Profile Fetcher
+ */
+export async function getSingleUserData(userId: string) {
+  try {
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("*, campus:campuses(*), team:teams(*)")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !user) return null;
+
+    // Fetch auth email for complete admin profile visibility
+    let authEmail = "";
+    try {
+      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (authData?.user?.email) {
+        authEmail = authData.user.email;
+      }
+    } catch {
+      // ignore
+    }
+
+    const isLeader = user.team ? (user.team as any).leader_id === user.id : false;
+    const eloRating = user.team ? ((user.team as any).elo_rating ?? 1000) : 1000;
+
+    return {
+      user: {
+        ...user,
+        email: authEmail || `${user.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        is_team_leader: isLeader,
+        elo_rating: eloRating,
+      },
+      campus: user.campus || null,
+      team: user.team || null,
+    };
+  } catch (err) {
+    console.error("Error in getSingleUserData:", err);
+    return null;
+  }
+}

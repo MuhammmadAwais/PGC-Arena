@@ -12,7 +12,7 @@ import {
   Hash,
   ExternalLink,
 } from "lucide-react";
-import { getCampusesData } from "@/features/campus/actions/campusActions";
+import { getSingleTeamData } from "@/features/campus/actions/campusActions";
 
 interface TeamDetailPageProps {
   params: Promise<{ id: string }>;
@@ -20,16 +20,13 @@ interface TeamDetailPageProps {
 
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   const { id } = await params;
-  const { allTeams, campuses, allMembers } = await getCampusesData();
+  const data = await getSingleTeamData(id);
 
-  const team = allTeams.find((t) => t.id === id);
-  if (!team) {
+  if (!data || !data.team) {
     notFound();
   }
 
-  const campus = campuses.find((c) => c.id === team.campus_id);
-  const teamMembers = allMembers.filter((m) => m.team_id === team.id);
-  const captain = teamMembers.find((m) => m.is_team_leader);
+  const { team, campus, leader: captain, members: teamMembers } = data;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">

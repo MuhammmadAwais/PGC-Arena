@@ -210,18 +210,24 @@ export function SavedListsBar({
           className="flex-1 flex items-center gap-2 overflow-x-auto scrollbar-none py-1 scroll-smooth"
         >
           {allPresets.map((preset) => {
-            const isActive = activePresetId === preset.id;
+            const isPresetActive =
+              activePresetId === preset.id ||
+              (preset.id === "starred" && Boolean(currentFilterState?.isStarredOnly));
+            const isStarredActive = preset.id === "starred" && isPresetActive;
+
             return (
               <button
                 key={preset.id}
                 onClick={() => onSelectPreset(preset)}
                 className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 ${
-                  isActive
-                    ? "bg-pgc-red text-white shadow-[0_0_15px_rgba(227,59,41,0.35)] border border-pgc-red"
+                  isStarredActive
+                    ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.35)] border font-bold"
+                    : isPresetActive
+                    ? "bg-pgc-red text-white shadow-[0_0_15px_rgba(227,59,41,0.35)] border border-pgc-red font-bold"
                     : "bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]"
                 }`}
               >
-                {getIcon(preset.iconName, isActive)}
+                {getIcon(preset.iconName, isPresetActive)}
                 <span>{preset.label}</span>
               </button>
             );

@@ -14,7 +14,7 @@ import {
   Calendar,
   Sparkles,
 } from "lucide-react";
-import { getCampusesData } from "@/features/campus/actions/campusActions";
+import { getSingleCampusData } from "@/features/campus/actions/campusActions";
 
 interface CampusDetailPageProps {
   params: Promise<{ id: string }>;
@@ -22,19 +22,13 @@ interface CampusDetailPageProps {
 
 export default async function CampusDetailPage({ params }: CampusDetailPageProps) {
   const { id } = await params;
-  const { campuses, allMembers, allTeams } = await getCampusesData();
+  const data = await getSingleCampusData(id);
 
-  const campus = campuses.find((c) => c.id === id);
-  if (!campus) {
+  if (!data || !data.campus) {
     notFound();
   }
 
-  // Filter campus-specific data
-  const campusTeams = allTeams.filter((t) => t.campus_id === campus.id);
-  const campusMembers = allMembers.filter((m) => m.campus_id === campus.id);
-  const campusManager = campusMembers.find((m) => m.role === "CAMPUS_MANAGER");
-  const campusTeachers = campusMembers.filter((m) => m.role === "TEACHER");
-  const campusStudents = campusMembers.filter((m) => m.role === "STUDENT");
+  const { campus, manager: campusManager, teachers: campusTeachers, teams: campusTeams, students: campusStudents } = data;
 
   // Calculate total campus points
   const totalElo = campusTeams.reduce((sum, t) => sum + (t.elo_rating ?? 0), 0);

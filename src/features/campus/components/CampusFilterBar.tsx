@@ -12,6 +12,7 @@ import {
   GraduationCap,
   ChevronDown,
   Check,
+  Star,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +32,7 @@ interface FilterState {
   status: string;
   isLeaderOnly: boolean;
   unassignedOnly: boolean;
+  isStarredOnly: boolean;
 }
 
 interface CampusFilterBarProps {
@@ -80,7 +82,8 @@ export function CampusFilterBar({
     filters.campusId !== "ALL" ||
     filters.status !== "ALL" ||
     filters.isLeaderOnly ||
-    filters.unassignedOnly
+    filters.unassignedOnly ||
+    filters.isStarredOnly
   );
 
   // Dynamic entity label based on active view mode and pluralization
@@ -207,7 +210,21 @@ export function CampusFilterBar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* 3. Quick Captain Filter Toggle */}
+          {/* 3. Quick Starred Campuses Filter Toggle */}
+          <button
+            onClick={() => onFilterChange({ isStarredOnly: !filters.isStarredOnly })}
+            className={`flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              filters.isStarredOnly
+                ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)] font-bold"
+                : "bg-black/30 border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.04]"
+            }`}
+            title="Filter by starred campuses"
+          >
+            <Star className={`w-3.5 h-3.5 ${filters.isStarredOnly ? "fill-amber-400 text-amber-400" : ""}`} />
+            <span>Starred</span>
+          </button>
+
+          {/* 4. Quick Captain Filter Toggle */}
           <button
             onClick={() => onFilterChange({ isLeaderOnly: !filters.isLeaderOnly })}
             className={`flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
@@ -221,6 +238,73 @@ export function CampusFilterBar({
           </button>
         </div>
       </div>
+
+      {/* ── Active Filter Badges with Quick 1-Click Dismiss ─────── */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+            Active:
+          </span>
+
+          {filters.isStarredOnly && (
+            <button
+              onClick={() => onFilterChange({ isStarredOnly: false })}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-semibold hover:bg-amber-500/30 transition-colors cursor-pointer"
+            >
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <span>Starred Campuses</span>
+              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+            </button>
+          )}
+
+          {filters.isLeaderOnly && (
+            <button
+              onClick={() => onFilterChange({ isLeaderOnly: false })}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pgc-gold/20 border border-pgc-gold/40 text-pgc-gold text-xs font-semibold hover:bg-pgc-gold/30 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3 h-3 text-pgc-gold" />
+              <span>Captains Only</span>
+              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+            </button>
+          )}
+
+          {filters.campusId !== "ALL" && selectedCampus && (
+            <button
+              onClick={() => onFilterChange({ campusId: "ALL" })}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/30 transition-colors cursor-pointer"
+            >
+              <Building2 className="w-3 h-3 text-cyan-400" />
+              <span>Campus: {selectedCampus.name}</span>
+              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+            </button>
+          )}
+
+          {filters.role !== "ALL" && (
+            <button
+              onClick={() => onFilterChange({ role: "ALL" })}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-semibold hover:bg-purple-500/30 transition-colors cursor-pointer"
+            >
+              <SelectedRoleIcon className="w-3 h-3" />
+              <span>Role: {selectedRole.label}</span>
+              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+            </button>
+          )}
+
+          {filters.searchQuery && (
+            <button
+              onClick={() => {
+                setLocalSearch("");
+                onFilterChange({ searchQuery: "" });
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium hover:bg-white/15 transition-colors cursor-pointer"
+            >
+              <Search className="w-3 h-3 text-slate-300" />
+              <span>&ldquo;{filters.searchQuery}&rdquo;</span>
+              <X className="w-3 h-3 ml-0.5 opacity-70 hover:opacity-100" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Bottom Row: Dynamic Results Counter & Clear Action ───── */}
       <div className="flex items-center justify-between text-xs pt-1 border-t border-white/[0.04]">

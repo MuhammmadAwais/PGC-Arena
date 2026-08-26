@@ -15,7 +15,7 @@ import {
   Calendar,
   CheckCircle2,
 } from "lucide-react";
-import { getCampusesData } from "@/features/campus/actions/campusActions";
+import { getSingleUserData } from "@/features/campus/actions/campusActions";
 
 interface UserProfilePageProps {
   params: Promise<{ id: string }>;
@@ -23,15 +23,13 @@ interface UserProfilePageProps {
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
   const { id } = await params;
-  const { allMembers, campuses, allTeams } = await getCampusesData();
+  const data = await getSingleUserData(id);
 
-  const member = allMembers.find((m) => m.id === id);
-  if (!member) {
+  if (!data || !data.user) {
     notFound();
   }
 
-  const campus = campuses.find((c) => c.id === member.campus_id);
-  const team = allTeams.find((t) => t.id === member.team_id);
+  const { user: member, campus, team } = data;
 
   const getRoleLabel = () => {
     switch (member.role) {
