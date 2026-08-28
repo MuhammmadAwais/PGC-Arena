@@ -14,6 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
+      boards: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          code: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          code: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          code?: string
+        }
+        Relationships: []
+      }
+      disciplines: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          code: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          code: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          code?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          code: string
+          script_type: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          textbook_cover_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          code: string
+          script_type?: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          textbook_cover_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          code?: string
+          script_type?: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          textbook_cover_url?: string | null
+        }
+        Relationships: []
+      }
+      curriculum_nodes: {
+        Row: {
+          board_id: string
+          class_level: number
+          created_at: string
+          discipline_id: string
+          id: string
+          subject_id: string
+        }
+        Insert: {
+          board_id: string
+          class_level: number
+          created_at?: string
+          discipline_id: string
+          id?: string
+          subject_id: string
+        }
+        Update: {
+          board_id?: string
+          class_level?: number
+          created_at?: string
+          discipline_id?: string
+          id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_nodes_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curriculum_nodes_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curriculum_nodes_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           banner_url: string | null

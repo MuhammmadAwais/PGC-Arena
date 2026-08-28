@@ -1,53 +1,202 @@
-import type { Metadata } from "next";
-import { BookOpen, GraduationCap } from "lucide-react";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Curriculum & Boards — PGC Arena Admin",
-  description: "Manage subject boards, curriculum definitions, and question category taxonomies.",
-};
+import { useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
+import {
+  GraduationCap,
+  Layers,
+  Plus,
+  BookOpen,
+  AlertCircle,
+  SearchX,
+} from "lucide-react";
+import { useCurriculumStore } from "@/features/curriculum/store/useCurriculumStore";
+import { CurriculumHeader } from "@/features/curriculum/components/CurriculumHeader";
+import { BoardCard } from "@/features/curriculum/components/BoardCard";
+import { CurriculumSkeleton } from "@/features/curriculum/components/skeletons/CurriculumSkeleton";
+import type { BoardWithDisciplines } from "@/features/curriculum/types/curriculumTypes";
 
-const boards = [
-  { name: "Federal Board (FBISE)", subjects: 12, color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
-  { name: "Punjab Board (BISE)", subjects: 14, color: "bg-pgc-red/10 border-pgc-red/20 text-pgc-red" },
-  { name: "Aga Khan Board", subjects: 10, color: "bg-amber-500/10 border-amber-500/20 text-amber-400" },
-  { name: "Cambridge (O/A Level)", subjects: 16, color: "bg-purple-500/10 border-purple-500/20 text-purple-400" },
-];
+// ── Lazy-loaded Modals (Code-Split for performance) ───────────────
+const CreateEditBoardModal = dynamic(
+  () =>
+    import("@/features/curriculum/components/modals/CreateEditBoardModal").then(
+      (m) => m.CreateEditBoardModal
+    ),
+  { ssr: false }
+);
 
-export default function CurriculumPage() {
+const CreateEditDisciplineModal = dynamic(
+  () =>
+    import(
+      "@/features/curriculum/components/modals/CreateEditDisciplineModal"
+    ).then((m) => m.CreateEditDisciplineModal),
+  { ssr: false }
+);
+
+const CreateEditSubjectModal = dynamic(
+  () =>
+    import("@/features/curriculum/components/modals/CreateEditSubjectModal").then(
+      (m) => m.CreateEditSubjectModal
+    ),
+  { ssr: false }
+);
+
+const AssignSubjectModal = dynamic(
+  () =>
+    import("@/features/curriculum/components/modals/AssignSubjectModal").then(
+      (m) => m.AssignSubjectModal
+    ),
+  { ssr: false }
+);
+
+const DeleteCurriculumModal = dynamic(
+  () =>
+    import("@/features/curriculum/components/modals/DeleteCurriculumModal").then(
+      (m) => m.DeleteCurriculumModal
+    ),
+  { ssr: false }
+);
+
+export default function CurriculumAdminPage() {
+  const {
+    curriculumData,
+    isLoaded,
+    isLoading,
+    error,
+    searchQuery,
+    selectedClass,
+    fetchCurriculum,
+    openCreateBoard,
+  } = useCurriculumStore();
+
+  useEffect(() => {
+    fetchCurriculum();
+  }, [fetchCurriculum]);
+
+  // ── Multi-tier Search Filter ────────────────────────────────────
+  const filteredBoardContainers = useMemo(() => {
+    if (!curriculumData?.boardContainers) return [];
+    if (!searchQuery.trim()) return curriculumData.boardContainers;
+
+    const q = searchQuery.toLowerCase().trim();
+
+    return curriculumData.boardContainers
+      .map((board) => {
+        const boardMatches =
+          board.name.toLowerCase().includes(q) ||
+          board.code.toLowerCase().includes(q);
+
+        // Filter disciplines inside this board
+        const matchingDisciplines = board.disciplines
+          .map((disc) => {
+            const discMatches =
+              disc.name.toLowerCase().includes(q) ||
+              disc.code.toLowerCase().includes(q);
+
+            // Filter subjects inside this discipline
+            const matchingNodes = disc.nodes.filter(
+              (n) =>
+                n.subject.name.toLowerCase().includes(q) ||
+                n.subject.code.toLowerCase().includes(q) ||
+                (n.subject.description &&
+                  n.subject.description.toLowerCase().includes(q))
+            );
+
+            if (discMatches || matchingNodes.length > 0) {
+              return {
+                ...disc,
+                nodes: discMatches ? disc.nodes : matchingNodes,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) as typeof board.disciplines;
+
+        if (boardMatches || matchingDisciplines.length > 0) {
+          return {
+            ...board,
+            disciplines: boardMatches ? board.disciplines : matchingDisciplines,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as BoardWithDisciplines[];
+  }, [curriculumData, searchQuery]);
+
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-white tracking-tight">
-          Curriculum &amp; <span className="text-pgc-red">Boards</span>
-        </h1>
-        <p className="mt-1 text-sm text-white/45">
-          Define examination boards, subject taxonomies, and chapter-level question categories.
-        </p>
-      </div>
+    <div className="space-y-8 pb-16 animate-in fade-in duration-300">
+      {/* ── Top Header with Class 11/12 Switcher, Search & Global Stats ── */}
+      <CurriculumHeader />
 
-      {/* Board cards */}
-      <div className="grid grid-cols-2 gap-4">
-        {boards.map(({ name, subjects, color }) => (
-          <div
-            key={name}
-            className={`rounded-2xl p-5 border bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-200 cursor-pointer`}
-          >
-            <GraduationCap className={`w-5 h-5 mb-3 ${color.split(" ").pop()}`} />
-            <p className="font-semibold text-white text-sm">{name}</p>
-            <p className="text-xs text-white/35 mt-1">{subjects} active subjects</p>
+      {/* ── Error Banner ─────────────────────────────────────────── */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+          <div className="flex-1">
+            <p className="font-bold text-red-200">Failed to load curriculum hierarchy</p>
+            <p className="text-red-400/90 mt-0.5">{error}</p>
           </div>
-        ))}
-      </div>
-
-      {/* Placeholder */}
-      <div className="rounded-2xl p-10 min-h-[280px] flex flex-col items-center justify-center gap-4 bg-white/[0.03] border border-white/[0.08] border-dashed">
-        <BookOpen className="w-8 h-8 text-white/15" />
-        <div className="text-center">
-          <p className="text-sm font-semibold text-white/30">Curriculum tree editor</p>
-          <p className="text-xs text-white/20 mt-1">Board → Subject → Chapter → Topic hierarchy will render here.</p>
+          <button
+            type="button"
+            onClick={() => fetchCurriculum(true)}
+            className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-white font-bold font-display text-[11px] transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
         </div>
-        <p className="text-xs text-white/15 mt-1">Route: /admin/curriculum · Feature: ai-seeding</p>
-      </div>
+      )}
+
+      {/* ── Main Content View ────────────────────────────────────── */}
+      {isLoading && !isLoaded ? (
+        <CurriculumSkeleton />
+      ) : filteredBoardContainers.length > 0 ? (
+        <div className="space-y-8">
+          {filteredBoardContainers.map((board) => (
+            <BoardCard key={board.id} board={board} />
+          ))}
+        </div>
+      ) : searchQuery ? (
+        /* Search Empty State */
+        <div className="py-16 text-center rounded-3xl bg-[#0B0C16]/60 border border-white/10 backdrop-blur-md">
+          <SearchX className="w-10 h-10 text-slate-500 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-white font-display">
+            No taxonomy items found
+          </h3>
+          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            No boards, disciplines, or subjects matched &ldquo;{searchQuery}&rdquo;. Try adjusting your search query.
+          </p>
+        </div>
+      ) : (
+        /* Zero Boards Initial Empty State */
+        <div className="py-20 text-center rounded-3xl bg-[#0B0C16]/80 border border-white/10 backdrop-blur-md p-8 space-y-4 max-w-xl mx-auto shadow-2xl">
+          <div className="h-16 w-16 rounded-3xl bg-pgc-red/10 border border-pgc-red/20 flex items-center justify-center mx-auto text-pgc-red shadow-lg shadow-pgc-red/10">
+            <GraduationCap className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-extrabold text-white font-display">
+              No Examination Boards Configured
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Define your first institutional board (e.g. Federal Board, BISE Lahore) to start building class syllabi and academic tracks.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openCreateBoard}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pgc-red to-[#c92f1f] hover:from-[#f04836] hover:to-pgc-red text-white text-xs font-bold font-display uppercase tracking-wider inline-flex items-center gap-2 shadow-lg shadow-pgc-red/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create First Board</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Dynamic Modals ────────────────────────────────────────── */}
+      <CreateEditBoardModal />
+      <CreateEditDisciplineModal />
+      <CreateEditSubjectModal />
+      <AssignSubjectModal />
+      <DeleteCurriculumModal />
     </div>
   );
 }
