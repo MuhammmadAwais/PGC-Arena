@@ -156,6 +156,135 @@ export type Database = {
           },
         ]
       }
+      chapters: {
+        Row: {
+          chapter_number: number
+          class_level: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          subject_id: string
+          title: string
+        }
+        Insert: {
+          chapter_number: number
+          class_level: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          subject_id: string
+          title: string
+        }
+        Update: {
+          chapter_number?: number
+          class_level?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          subject_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string
+          topic_number: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title: string
+          topic_number: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+          topic_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          cognitive_type: "KNOWLEDGE" | "CONCEPTUAL" | "APPLICATION"
+          correct_option_index: number
+          created_at: string
+          difficulty: "EASY" | "MEDIUM" | "HARD"
+          explanation: string | null
+          id: string
+          is_active: boolean
+          options: string[] | Json
+          prompt: string
+          script_type: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          time_limit_sec: number
+          topic_id: string
+        }
+        Insert: {
+          cognitive_type?: "KNOWLEDGE" | "CONCEPTUAL" | "APPLICATION"
+          correct_option_index: number
+          created_at?: string
+          difficulty?: "EASY" | "MEDIUM" | "HARD"
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          options: string[] | Json
+          prompt: string
+          script_type?: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          time_limit_sec?: number
+          topic_id: string
+        }
+        Update: {
+          cognitive_type?: "KNOWLEDGE" | "CONCEPTUAL" | "APPLICATION"
+          correct_option_index?: number
+          created_at?: string
+          difficulty?: "EASY" | "MEDIUM" | "HARD"
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          options?: string[] | Json
+          prompt?: string
+          script_type?: "LATIN" | "URDU_NASTALIQ" | "ARABIC"
+          time_limit_sec?: number
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           banner_url: string | null
