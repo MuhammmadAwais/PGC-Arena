@@ -10,7 +10,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: "Admin",
   campuses: "Campuses & Teams",
   curriculum: "Curriculum & Boards",
-  "ai-creation": "AI Question Forge",
+  "ai-creation": "AI Question Generator",
   "question-bank": "Question Bank Vault",
   tournaments: "Tournaments & Brackets",
   spectate: "Spectate Arena",
@@ -36,7 +36,11 @@ function useBreadcrumbs(): BreadcrumbSegment[] {
 
 /** Live PKT clock — updates every second on client only to eliminate hydration errors */
 function LiveClock() {
-  const [timeState, setTimeState] = useState<{ pkt: string; utc: string; date: string } | null>(null);
+  const [timeState, setTimeState] = useState<{
+    pkt: string;
+    utc: string;
+    date: string;
+  } | null>(null);
 
   useEffect(() => {
     const updateTime = () => {
@@ -72,7 +76,10 @@ function LiveClock() {
 
   if (!timeState) {
     return (
-      <div className="flex flex-col items-end leading-tight opacity-40" suppressHydrationWarning>
+      <div
+        className="flex flex-col items-end leading-tight opacity-40"
+        suppressHydrationWarning
+      >
         <span className="text-[13px] font-mono font-semibold text-white/80">
           --:--:-- <span className="text-white/30 font-normal">PKT</span>
         </span>
@@ -84,7 +91,10 @@ function LiveClock() {
   }
 
   return (
-    <div className="flex flex-col items-end leading-tight" suppressHydrationWarning>
+    <div
+      className="flex flex-col items-end leading-tight"
+      suppressHydrationWarning
+    >
       <span className="text-[13px] font-mono font-semibold text-white/80">
         {timeState.pkt} <span className="text-white/30 font-normal">PKT</span>
       </span>
@@ -158,7 +168,6 @@ export function Navbar() {
 
       {/* ── Right: Clock ─────────────────────── */}
       <div className="flex items-center gap-5">
-
         {/* Live clock */}
         <LiveClock />
       </div>

@@ -1,10 +1,17 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireSuperAdmin } from "@/lib/supabase/rbac";
 import { provisionUserSchema } from "../schemas/provisionSchema";
 import { revalidatePath } from "next/cache";
 
 export async function provisionUser(formData: FormData) {
+  // 0. Zero-Trust RBAC Check: Ensure caller is authenticated as SUPER_ADMIN
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   const rawData = Object.fromEntries(formData.entries());
   const result = provisionUserSchema.safeParse(rawData);
 

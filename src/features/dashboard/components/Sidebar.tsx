@@ -29,7 +29,10 @@ interface SidebarProps {
 type NavItem = {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+  icon: React.ComponentType<{
+    className?: string;
+    "aria-hidden"?: boolean | "true" | "false";
+  }>;
   exact?: boolean;
 };
 
@@ -52,7 +55,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/admin/ai-creation",
-    label: "AI Question Forge",
+    label: "AI Question Generator",
     icon: Sparkles,
   },
   {
@@ -124,8 +127,6 @@ export function Sidebar({ profile }: SidebarProps) {
         "relative z-20",
       ].join(" ")}
     >
-
-
       {/* ═══════════════════════════════════════════════════
           TOP — Brand lockup
          ═══════════════════════════════════════════════════ */}
@@ -197,21 +198,23 @@ export function Sidebar({ profile }: SidebarProps) {
       {/* ═══════════════════════════════════════════════════
           BOTTOM — Profile card (Clickable Dropdown)
          ═══════════════════════════════════════════════════ */}
-      <div className="px-3 pb-4 pt-3 border-t border-white/[0.06] relative" ref={menuRef}>
-        
+      <div
+        className="px-3 pb-4 pt-3 border-t border-white/[0.06] relative"
+        ref={menuRef}
+      >
         {/* Dropdown Menu Modal */}
         {isMenuOpen && (
-          <div 
+          <div
             className={[
               "absolute bottom-[calc(100%-8px)] left-3 right-3 mb-2 rounded-xl",
               "bg-[#0B0C16] border border-white/10",
               "shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden z-50",
-              "animate-in slide-in-from-bottom-2 fade-in duration-200"
+              "animate-in slide-in-from-bottom-2 fade-in duration-200",
             ].join(" ")}
           >
             <div className="p-1.5">
-              <Link 
-                href="/admin/settings" 
+              <Link
+                href="/admin/settings"
                 onClick={() => setIsMenuOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
               >
@@ -220,8 +223,8 @@ export function Sidebar({ profile }: SidebarProps) {
               </Link>
               <div className="h-px bg-white/[0.06] my-1 mx-2" />
               <form action={signOut}>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-pgc-red/10 hover:text-pgc-red transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
@@ -237,7 +240,9 @@ export function Sidebar({ profile }: SidebarProps) {
           className={[
             "w-full flex items-center justify-between text-left",
             "rounded-xl p-3 transition-colors duration-200 cursor-pointer",
-            isMenuOpen ? "bg-white/[0.08]" : "bg-white/[0.03] hover:bg-white/[0.06]",
+            isMenuOpen
+              ? "bg-white/[0.08]"
+              : "bg-white/[0.03] hover:bg-white/[0.06]",
             "border border-white/[0.04] hover:border-white/[0.08]",
           ].join(" ")}
         >
@@ -270,8 +275,8 @@ export function Sidebar({ profile }: SidebarProps) {
             </div>
           </div>
 
-          <ChevronUp 
-            className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`} 
+          <ChevronUp
+            className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`}
           />
         </button>
       </div>

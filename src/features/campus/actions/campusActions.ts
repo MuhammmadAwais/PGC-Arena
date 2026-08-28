@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuth, requireSuperAdmin } from "@/lib/supabase/rbac";
 import type { CampusItem, MemberItem, TeamItem, UserRole } from "../types/campusTypes";
 
 // ── Validation Schemas ───────────────────────────────────────────
@@ -42,6 +43,7 @@ const addMemberSchema = z.object({
 /**
  * Fetch all campuses, teams, and users dynamically from Supabase
  * and construct the hierarchical structure and flat directory.
+ * Security: Requires authenticated session with SUPER_ADMIN or CAMPUS_MANAGER role.
  */
 export async function getCampusesData(): Promise<{
   success: boolean;
@@ -50,6 +52,18 @@ export async function getCampusesData(): Promise<{
   allTeams: TeamItem[];
   error?: string;
 }> {
+  // 0. RBAC Verification
+  const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER"]);
+  if (!auth.authorized) {
+    return {
+      success: false,
+      campuses: [],
+      allMembers: [],
+      allTeams: [],
+      error: auth.error,
+    };
+  }
+
   try {
     const supabase = await createClient();
 
@@ -209,6 +223,7 @@ export async function getCampusesData(): Promise<{
 
 /**
  * Server Action: Create a new Campus
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function createCampusAction(data: {
   name: string;
@@ -216,6 +231,12 @@ export async function createCampusAction(data: {
   logo_url?: string | null;
   banner_url?: string | null;
 }) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   const result = createCampusSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.issues[0].message };
@@ -248,6 +269,7 @@ export async function createCampusAction(data: {
 
 /**
  * Server Action: Create a new Team with optional Team Leader assignment
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function createTeamAction(data: {
   name: string;
@@ -257,6 +279,12 @@ export async function createTeamAction(data: {
   logo_url?: string | null;
   banner_url?: string | null;
 }) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   const result = createTeamSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.issues[0].message };
@@ -296,6 +324,7 @@ export async function createTeamAction(data: {
 
 /**
  * Server Action: Add a new Member (Student, Teacher, Manager)
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function addMemberAction(data: {
   fullName?: string;
@@ -315,6 +344,12 @@ export async function addMemberAction(data: {
   avatarUrl?: string | null;
   avatar_url?: string | null;
 }) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   const normalizedData = {
     full_name: data.full_name || data.fullName,
     email: data.email,
@@ -400,8 +435,15 @@ export async function addMemberAction(data: {
 
 /**
  * Server Action: Assign Team Captain / Leader
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function assignTeamLeaderAction(teamId: string, studentId: string | null) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   try {
     const { error } = await supabaseAdmin
       .from("teams")
@@ -427,10 +469,17 @@ export async function assignTeamLeaderAction(teamId: string, studentId: string |
 
 /**
  * Real-time Validation Action: Check if an IGN (In-Game Name) is already taken
+ * Security: Requires authenticated session.
  */
 export async function checkIgnAvailabilityAction(
   ign: string
-): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean }> {
+): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean; error?: string }> {
+  // 0. Authentication Check
+  const auth = await requireAuth();
+  if (!auth.authorized) {
+    return { available: false, error: auth.error };
+  }
+
   try {
     const trimmed = ign.trim();
     if (!trimmed) {
@@ -464,10 +513,17 @@ export async function checkIgnAvailabilityAction(
 
 /**
  * Real-time Validation Action: Check if a Roll Number / Employee ID is already registered
+ * Security: Requires authenticated session.
  */
 export async function checkRollNumberAvailabilityAction(
   rollNumber: string
-): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean }> {
+): Promise<{ available: boolean; takenBy?: string; tooShort?: boolean; error?: string }> {
+  // 0. Authentication Check
+  const auth = await requireAuth();
+  if (!auth.authorized) {
+    return { available: false, error: auth.error };
+  }
+
   try {
     const trimmed = rollNumber.trim();
     if (!trimmed) {
@@ -501,16 +557,23 @@ export async function checkRollNumberAvailabilityAction(
 
 /**
  * Server Action: Permanently Delete a Campus
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function deleteCampusAction(
   campusId: string
 ): Promise<{ success?: boolean; error?: string }> {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { success: false, error: auth.error };
+  }
+
   try {
     if (!campusId) {
-      return { error: "Campus ID is required." };
+      return { success: false, error: "Campus ID is required." };
     }
 
-    // 1. Delete the campus record (cascades or cleans up associations)
+    // 1. Delete the campus record
     const { error } = await supabaseAdmin
       .from("campuses")
       .delete()
@@ -522,19 +585,26 @@ export async function deleteCampusAction(
     return { success: true };
   } catch (err: any) {
     console.error("Delete Campus Error:", err);
-    return { error: err.message || "Failed to delete campus." };
+    return { success: false, error: err.message || "Failed to delete campus." };
   }
 }
 
 /**
  * Server Action: Permanently Delete an Esports Team
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function deleteTeamAction(
   teamId: string
 ): Promise<{ success?: boolean; error?: string }> {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { success: false, error: auth.error };
+  }
+
   try {
     if (!teamId) {
-      return { error: "Team ID is required." };
+      return { success: false, error: "Team ID is required." };
     }
 
     // 1. Unassign all members from this team
@@ -555,19 +625,26 @@ export async function deleteTeamAction(
     return { success: true };
   } catch (err: any) {
     console.error("Delete Team Error:", err);
-    return { error: err.message || "Failed to delete team." };
+    return { success: false, error: err.message || "Failed to delete team." };
   }
 }
 
 /**
  * Server Action: Permanently Delete a Member (Player, Teacher, Manager)
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function deleteMemberAction(
   userId: string
 ): Promise<{ success?: boolean; error?: string }> {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { success: false, error: auth.error };
+  }
+
   try {
     if (!userId) {
-      return { error: "User ID is required." };
+      return { success: false, error: "User ID is required." };
     }
 
     // 1. Clear team leadership if this user is a captain
@@ -594,14 +671,22 @@ export async function deleteMemberAction(
     return { success: true };
   } catch (err: any) {
     console.error("Delete Member Error:", err);
-    return { error: err.message || "Failed to delete member." };
+    return { success: false, error: err.message || "Failed to delete member." };
   }
 }
 
 /**
  * High-Speed Single Campus Fetcher (Architecturally Optimized - Single Roundtrip Batch)
+ * Security: Requires authenticated session.
  */
 export async function getSingleCampusData(campusId: string) {
+  // 0. RBAC Check
+  const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER"]);
+  if (!auth.authorized) {
+    console.warn("getSingleCampusData unauthorized attempt:", auth.error);
+    return null;
+  }
+
   try {
     // Concurrently fetch campus, all campus users, and all campus squads
     const [campusRes, directUsersRes, teamsRes] = await Promise.all([
@@ -710,12 +795,18 @@ export async function getSingleCampusData(campusId: string) {
   }
 }
 
-
-
 /**
  * High-Speed Single Team Fetcher (Architecturally Optimized - Single Roundtrip Batch)
+ * Security: Requires authenticated session.
  */
 export async function getSingleTeamData(teamId: string) {
+  // 0. RBAC Check
+  const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER", "STUDENT"]);
+  if (!auth.authorized) {
+    console.warn("getSingleTeamData unauthorized attempt:", auth.error);
+    return null;
+  }
+
   try {
     const { data: team, error: teamError } = await supabaseAdmin
       .from("teams")
@@ -776,8 +867,16 @@ export async function getSingleTeamData(teamId: string) {
 
 /**
  * High-Speed Single User Profile Fetcher (Architecturally Optimized)
+ * Security: Requires authenticated session.
  */
 export async function getSingleUserData(userId: string) {
+  // 0. RBAC Check
+  const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER", "STUDENT"]);
+  if (!auth.authorized) {
+    console.warn("getSingleUserData unauthorized attempt:", auth.error);
+    return null;
+  }
+
   try {
     const { data: user, error: userError } = await supabaseAdmin
       .from("users")
@@ -843,6 +942,7 @@ export async function getSingleUserData(userId: string) {
 
 /**
  * Server Action: Update an existing Campus
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function updateCampusAction(
   campusId: string,
@@ -854,6 +954,12 @@ export async function updateCampusAction(
     manager_id?: string | null;
   }
 ) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   try {
     const formattedName =
       data.region && !data.name.includes("(")
@@ -907,6 +1013,7 @@ export async function updateCampusAction(
 
 /**
  * Server Action: Update an existing Esports Team
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function updateTeamAction(
   teamId: string,
@@ -918,6 +1025,12 @@ export async function updateTeamAction(
     banner_url?: string | null;
   }
 ) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   try {
     const { error: teamError } = await supabaseAdmin
       .from("teams")
@@ -952,8 +1065,15 @@ export async function updateTeamAction(
 
 /**
  * Server Action: Assign Student to Team (or remove from team)
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function assignStudentToTeamAction(studentId: string, teamId: string | null) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   try {
     const { error } = await supabaseAdmin
       .from("users")
@@ -973,8 +1093,15 @@ export async function assignStudentToTeamAction(studentId: string, teamId: strin
 
 /**
  * Server Action: Assign Student to Campus (or transfer)
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function assignStudentToCampusAction(studentId: string, campusId: string | null) {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    return { error: auth.error };
+  }
+
   try {
     const updates: { campus_id: string | null; team_id?: string | null } = {
       campus_id: campusId,
@@ -1001,8 +1128,16 @@ export async function assignStudentToCampusAction(studentId: string, campusId: s
 
 /**
  * Server Action: Fetch assignable candidates (all students, managers, teachers, and campuses)
+ * Security: Requires SUPER_ADMIN role.
  */
 export async function getAssignableDataAction() {
+  // 0. Zero-Trust RBAC Check
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) {
+    console.warn("getAssignableDataAction unauthorized attempt:", auth.error);
+    return { campuses: [], users: [], teams: [] };
+  }
+
   try {
     const [campusesRes, usersRes, teamsRes] = await Promise.all([
       supabaseAdmin.from("campuses").select("id, name, logo_url, region").order("name"),
