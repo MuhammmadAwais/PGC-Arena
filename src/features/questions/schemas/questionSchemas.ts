@@ -7,8 +7,9 @@ export const classLevelSchema = z.union([z.literal(11), z.literal(12)]);
 
 // ── Chapter Schemas ──────────────────────────────────────────
 export const createChapterSchema = z.object({
-  subject_id: z.string().uuid("Invalid Subject ID"),
-  class_level: classLevelSchema,
+  curriculum_node_id: z.string().uuid("Invalid Curriculum Node ID"),
+  subject_id: z.string().uuid("Invalid Subject ID").optional(),
+  class_level: classLevelSchema.optional(),
   chapter_number: z.coerce.number().min(1, "Chapter number must be at least 1"),
   title: z.string().min(2, "Chapter title must be at least 2 characters").max(150, "Title too long"),
   description: z.string().max(500, "Description too long").optional().nullable().or(z.literal("")),

@@ -161,6 +161,7 @@ export type Database = {
           chapter_number: number
           class_level: number
           created_at: string
+          curriculum_node_id: string | null
           description: string | null
           id: string
           is_active: boolean
@@ -171,6 +172,7 @@ export type Database = {
           chapter_number: number
           class_level: number
           created_at?: string
+          curriculum_node_id?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -181,6 +183,7 @@ export type Database = {
           chapter_number?: number
           class_level?: number
           created_at?: string
+          curriculum_node_id?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -188,6 +191,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chapters_curriculum_node_id_fkey"
+            columns: ["curriculum_node_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_nodes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chapters_subject_id_fkey"
             columns: ["subject_id"]

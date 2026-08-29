@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useQuestionBankStore } from "@/features/questions/store/useQuestionBankStore";
 import { QuestionVaultHeader } from "@/features/questions/components/QuestionVaultHeader";
 import { ChapterTopicRail } from "@/features/questions/components/ChapterTopicRail";
 import { McqCardGrid } from "@/features/questions/components/McqCardGrid";
 import { QuestionVaultSkeleton } from "@/features/questions/components/skeletons/QuestionVaultSkeleton";
-import type { ClassLevel } from "@/features/curriculum/types/curriculumTypes";
 
 // ── Lazy-loaded Modals ───────────────────────────────────────────
 const CreateEditMcqModal = dynamic(
@@ -53,24 +52,20 @@ const DeleteQuestionModal = dynamic(
 
 export default function SubjectQuestionVaultPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-
-  const subjectId = (params?.subjectId as string) || "";
-  const classParam = searchParams.get("classLevel");
-  const initialClassLevel: ClassLevel = classParam === "12" ? 12 : 11;
+  const nodeId = (params?.subjectId as string) || "";
 
   const {
     vaultData,
     isLoadingVault,
-    initSubjectVault,
+    initNodeVault,
     error,
   } = useQuestionBankStore();
 
   useEffect(() => {
-    if (subjectId) {
-      initSubjectVault(subjectId, initialClassLevel);
+    if (nodeId) {
+      initNodeVault(nodeId);
     }
-  }, [subjectId, initialClassLevel, initSubjectVault]);
+  }, [nodeId, initNodeVault]);
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-300">

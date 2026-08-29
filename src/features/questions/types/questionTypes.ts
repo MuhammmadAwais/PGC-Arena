@@ -1,10 +1,17 @@
-import type { Subject, ClassLevel, ScriptType } from "@/features/curriculum/types/curriculumTypes";
+import type {
+  Board,
+  Discipline,
+  Subject,
+  ClassLevel,
+  ScriptType,
+} from "@/features/curriculum/types/curriculumTypes";
 
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type CognitiveType = "KNOWLEDGE" | "CONCEPTUAL" | "APPLICATION";
 
 export interface Chapter {
   id: string;
+  curriculum_node_id: string;
   subject_id: string;
   class_level: ClassLevel;
   chapter_number: number;
@@ -66,11 +73,24 @@ export interface SubjectVaultStats {
 
 export interface SubjectVaultDataResponse {
   success: boolean;
+  curriculum_node_id: string;
+  board: Board | null;
+  discipline: Discipline | null;
   subject: Subject | null;
   classLevel: ClassLevel;
   chapters: ChapterWithTopics[];
   stats: SubjectVaultStats;
   error?: string;
+}
+
+export interface CurriculumNodeVaultCard {
+  curriculum_node_id: string;
+  board: Board;
+  discipline: Discipline;
+  subject: Subject;
+  class_level: ClassLevel;
+  question_count: number;
+  chapter_count: number;
 }
 
 export interface QuestionFilterPayload {
@@ -91,8 +111,9 @@ export interface PaginatedQuestionsResponse {
 }
 
 export interface CreateChapterInput {
-  subject_id: string;
-  class_level: ClassLevel;
+  curriculum_node_id: string;
+  subject_id?: string;
+  class_level?: ClassLevel;
   chapter_number: number;
   title: string;
   description?: string | null;

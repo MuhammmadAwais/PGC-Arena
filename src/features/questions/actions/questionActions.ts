@@ -18,6 +18,7 @@ import type {
   Question,
   ChapterWithTopics,
   SubjectVaultDataResponse,
+  CurriculumNodeVaultCard,
   PaginatedQuestionsResponse,
   QuestionFilterPayload,
   CreateChapterInput,
@@ -30,19 +31,182 @@ import type {
   Difficulty,
   CognitiveType,
 } from "../types/questionTypes";
-import type { ClassLevel, Subject, ScriptType } from "@/features/curriculum/types/curriculumTypes";
+import type {
+  ClassLevel,
+  Board,
+  Discipline,
+  Subject,
+  ScriptType,
+} from "@/features/curriculum/types/curriculumTypes";
 
-// ── 1. Fetch Subject Vault Metadata & Tree ────────────────────────
+// ── 1. Fetch Curriculum Nodes Hub List with Question Counts ──────────
+export async function getCurriculumNodeHubListAction(params?: {
+  boardId?: string | null;
+  disciplineId?: string | null;
+  classLevel?: ClassLevel | null;
+  search?: string | null;
+}): Promise<{
+  success: boolean;
+  nodes: CurriculumNodeVaultCard[];
+  boards: Board[];
+  disciplines: Discipline[];
+  error?: string;
+}> {
+  const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER"]);
+  if (!auth.authorized) {
+    return { success: false, nodes: [], boards: [], disciplines: [], error: auth.error };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Fetch Boards & Disciplines for filter bar
+    const [{ data: boardsData }, { data: disciplinesData }] = await Promise.all([
+      supabase.from("boards").select("*").eq("is_active", true).order("name"),
+      supabase.from("disciplines").select("*").eq("is_active", true).order("name"),
+    ]);
+
+    const boards: Board[] = (boardsData || []).map((b) => ({
+      id: b.id,
+      name: b.name,
+      code: b.code,
+      logo_url: b.logo_url,
+      banner_url: b.banner_url,
+      is_active: b.is_active,
+      created_at: b.created_at,
+    }));
+
+    const disciplines: Discipline[] = (disciplinesData || []).map((d) => ({
+      id: d.id,
+      name: d.name,
+      code: d.code,
+      description: d.description,
+      logo_url: d.logo_url,
+      is_active: d.is_active,
+      created_at: d.created_at,
+    }));
+
+    // 2. Query Curriculum Nodes with relations
+    let query = supabase
+      .from("curriculum_nodes")
+      .select(`
+        id,
+        class_level,
+        board:boards (id, name, code, logo_url, banner_url, is_active, created_at),
+        discipline:disciplines (id, name, code, description, logo_url, is_active, created_at),
+        subject:subjects (id, name, code, script_type, textbook_cover_url, description, is_active, created_at)
+      `)
+      .order("class_level", { ascending: true });
+
+    if (params?.boardId) {
+      query = query.eq("board_id", params.boardId);
+    }
+    if (params?.disciplineId) {
+      query = query.eq("discipline_id", params.disciplineId);
+    }
+    if (params?.classLevel) {
+      query = query.eq("class_level", params.classLevel);
+    }
+
+    const { data: nodesRaw, error: nodeError } = await query;
+    if (nodeError) throw nodeError;
+
+    // 3. Aggregate Question & Chapter counts per node
+    const { data: chaptersData, error: chapError } = await supabase
+      .from("chapters")
+      .select(`
+        id,
+        curriculum_node_id,
+        topics:topics (
+          id,
+          questions:questions (id)
+        )
+      `);
+
+    if (chapError) throw chapError;
+
+    const nodeStatsMap = new Map<string, { chapters: number; questions: number }>();
+
+    (chaptersData || []).forEach((chap: any) => {
+      const nodeId = chap.curriculum_node_id;
+      if (!nodeId) return;
+
+      const current = nodeStatsMap.get(nodeId) || { chapters: 0, questions: 0 };
+      current.chapters += 1;
+
+      if (Array.isArray(chap.topics)) {
+        chap.topics.forEach((t: any) => {
+          if (Array.isArray(t.questions)) {
+            current.questions += t.questions.length;
+          }
+        });
+      }
+
+      nodeStatsMap.set(nodeId, current);
+    });
+
+    const nodes: CurriculumNodeVaultCard[] = (nodesRaw || [])
+      .filter((n: any) => n.board && n.discipline && n.subject)
+      .map((n: any) => {
+        const stats = nodeStatsMap.get(n.id) || { chapters: 0, questions: 0 };
+        return {
+          curriculum_node_id: n.id,
+          board: n.board as Board,
+          discipline: n.discipline as Discipline,
+          subject: {
+            id: n.subject.id,
+            name: n.subject.name,
+            code: n.subject.code,
+            script_type: n.subject.script_type as ScriptType,
+            textbook_cover_url: n.subject.textbook_cover_url,
+            description: n.subject.description,
+            is_active: n.subject.is_active,
+            created_at: n.subject.created_at,
+          },
+          class_level: n.class_level as ClassLevel,
+          chapter_count: stats.chapters,
+          question_count: stats.questions,
+        };
+      });
+
+    // Client-side / In-memory search filter for subject name/code
+    const filteredNodes = params?.search
+      ? nodes.filter((n) => {
+          const q = params.search!.toLowerCase();
+          return (
+            n.subject.name.toLowerCase().includes(q) ||
+            n.subject.code.toLowerCase().includes(q) ||
+            n.board.name.toLowerCase().includes(q) ||
+            n.discipline.name.toLowerCase().includes(q)
+          );
+        })
+      : nodes;
+
+    return {
+      success: true,
+      nodes: filteredNodes,
+      boards,
+      disciplines,
+    };
+  } catch (err: any) {
+    console.error("Failed to load curriculum node hub list:", err);
+    return { success: false, nodes: [], boards: [], disciplines: [], error: err.message };
+  }
+}
+
+// ── 2. Fetch Isolated Curriculum Node Vault Metadata & Tree ───────────
 export async function getSubjectVaultData(
-  subjectId: string,
-  classLevel: ClassLevel = 11
+  curriculumNodeId: string
 ): Promise<SubjectVaultDataResponse> {
   const auth = await requireAuth(["SUPER_ADMIN", "CAMPUS_MANAGER", "TEACHER"]);
   if (!auth.authorized) {
     return {
       success: false,
+      curriculum_node_id: curriculumNodeId,
+      board: null,
+      discipline: null,
       subject: null,
-      classLevel,
+      classLevel: 11,
       chapters: [],
       stats: { totalChapters: 0, totalTopics: 0, totalQuestions: 0, easyCount: 0, mediumCount: 0, hardCount: 0 },
       error: auth.error,
@@ -52,42 +216,54 @@ export async function getSubjectVaultData(
   try {
     const supabase = await createClient();
 
-    // 1. Fetch Subject
-    const { data: subjectRaw, error: subError } = await supabase
-      .from("subjects")
-      .select("*")
-      .eq("id", subjectId)
+    // 1. Fetch Curriculum Node with Board, Discipline, Subject
+    const { data: nodeRaw, error: nodeError } = await supabase
+      .from("curriculum_nodes")
+      .select(`
+        id,
+        class_level,
+        board:boards (id, name, code, logo_url, banner_url, is_active, created_at),
+        discipline:disciplines (id, name, code, description, logo_url, is_active, created_at),
+        subject:subjects (id, name, code, script_type, textbook_cover_url, description, is_active, created_at)
+      `)
+      .eq("id", curriculumNodeId)
       .maybeSingle();
 
-    if (subError) throw subError;
-    if (!subjectRaw) {
+    if (nodeError) throw nodeError;
+    if (!nodeRaw) {
       return {
         success: false,
+        curriculum_node_id: curriculumNodeId,
+        board: null,
+        discipline: null,
         subject: null,
-        classLevel,
+        classLevel: 11,
         chapters: [],
         stats: { totalChapters: 0, totalTopics: 0, totalQuestions: 0, easyCount: 0, mediumCount: 0, hardCount: 0 },
-        error: "Subject not found in curriculum bank.",
+        error: "Curriculum node not found.",
       };
     }
 
+    const board = nodeRaw.board as unknown as Board;
+    const discipline = nodeRaw.discipline as unknown as Discipline;
+    const rawSub: any = nodeRaw.subject;
     const subject: Subject = {
-      id: subjectRaw.id,
-      name: subjectRaw.name,
-      code: subjectRaw.code,
-      script_type: subjectRaw.script_type as ScriptType,
-      textbook_cover_url: subjectRaw.textbook_cover_url,
-      description: subjectRaw.description,
-      is_active: subjectRaw.is_active,
-      created_at: subjectRaw.created_at,
+      id: rawSub.id,
+      name: rawSub.name,
+      code: rawSub.code,
+      script_type: rawSub.script_type as ScriptType,
+      textbook_cover_url: rawSub.textbook_cover_url,
+      description: rawSub.description,
+      is_active: rawSub.is_active,
+      created_at: rawSub.created_at,
     };
+    const classLevel = nodeRaw.class_level as ClassLevel;
 
-    // 2. Fetch Chapters for this subject and classLevel
+    // 2. Fetch Chapters scoped strictly to this curriculum_node_id
     const { data: chaptersRaw, error: chapError } = await supabase
       .from("chapters")
       .select("*")
-      .eq("subject_id", subjectId)
-      .eq("class_level", classLevel)
+      .eq("curriculum_node_id", curriculumNodeId)
       .order("chapter_number", { ascending: true });
 
     if (chapError) throw chapError;
@@ -152,6 +328,7 @@ export async function getSubjectVaultData(
 
       return {
         id: chap.id,
+        curriculum_node_id: chap.curriculum_node_id || curriculumNodeId,
         subject_id: chap.subject_id,
         class_level: chap.class_level as ClassLevel,
         chapter_number: chap.chapter_number,
@@ -175,28 +352,33 @@ export async function getSubjectVaultData(
 
     return {
       success: true,
+      curriculum_node_id: curriculumNodeId,
+      board,
+      discipline,
       subject,
       classLevel,
       chapters,
       stats,
     };
   } catch (err: any) {
-    console.error("Failed to get subject vault data:", err);
+    console.error("Failed to get curriculum node vault data:", err);
     return {
       success: false,
+      curriculum_node_id: curriculumNodeId,
+      board: null,
+      discipline: null,
       subject: null,
-      classLevel,
+      classLevel: 11,
       chapters: [],
       stats: { totalChapters: 0, totalTopics: 0, totalQuestions: 0, easyCount: 0, mediumCount: 0, hardCount: 0 },
-      error: err.message || "Failed to load subject vault.",
+      error: err.message || "Failed to load node vault.",
     };
   }
 }
 
-// ── 2. Fetch Paginated Questions ──────────────────────────────────
+// ── 3. Fetch Paginated Questions for Curriculum Node ─────────────────
 export async function getVaultQuestionsAction(params: {
-  subjectId: string;
-  classLevel: ClassLevel;
+  curriculumNodeId: string;
   chapterId?: string | null;
   topicId?: string | null;
   page?: number;
@@ -217,8 +399,7 @@ export async function getVaultQuestionsAction(params: {
   }
 
   const {
-    subjectId,
-    classLevel,
+    curriculumNodeId,
     chapterId,
     topicId,
     page = 1,
@@ -241,12 +422,11 @@ export async function getVaultQuestionsAction(params: {
         .eq("chapter_id", chapterId);
       targetTopicIds = (topicsData || []).map((t) => t.id);
     } else {
-      // All chapters for subject & class
+      // All chapters for this curriculum_node_id
       const { data: chapsData } = await supabase
         .from("chapters")
         .select("id")
-        .eq("subject_id", subjectId)
-        .eq("class_level", classLevel);
+        .eq("curriculum_node_id", curriculumNodeId);
 
       const chapIds = (chapsData || []).map((c) => c.id);
       if (chapIds.length > 0) {
@@ -395,7 +575,7 @@ export async function getVaultQuestionsAction(params: {
   }
 }
 
-// ── 3. Chapter CRUD Actions ───────────────────────────────────────
+// ── 4. Chapter CRUD Actions ───────────────────────────────────────
 export async function createChapterAction(rawInput: CreateChapterInput) {
   const auth = await requireSuperAdmin();
   if (!auth.authorized) return { success: false, error: auth.error };
@@ -407,11 +587,29 @@ export async function createChapterAction(rawInput: CreateChapterInput) {
 
   try {
     const supabase = await createClient();
+
+    // Resolve subject_id and class_level from curriculum_node if not explicitly passed
+    let subjectId = parsed.data.subject_id;
+    let classLevel = parsed.data.class_level;
+
+    if (!subjectId || !classLevel) {
+      const { data: nodeData, error: nodeErr } = await supabase
+        .from("curriculum_nodes")
+        .select("subject_id, class_level")
+        .eq("id", parsed.data.curriculum_node_id)
+        .single();
+
+      if (nodeErr || !nodeData) throw new Error("Referenced curriculum node not found.");
+      subjectId = nodeData.subject_id;
+      classLevel = nodeData.class_level as ClassLevel;
+    }
+
     const { data, error } = await supabase
       .from("chapters")
       .insert({
-        subject_id: parsed.data.subject_id,
-        class_level: parsed.data.class_level,
+        curriculum_node_id: parsed.data.curriculum_node_id,
+        subject_id: subjectId,
+        class_level: classLevel,
         chapter_number: parsed.data.chapter_number,
         title: parsed.data.title,
         description: parsed.data.description || null,
@@ -422,7 +620,7 @@ export async function createChapterAction(rawInput: CreateChapterInput) {
 
     if (error) {
       if (error.code === "23505") {
-        return { success: false, error: `Chapter ${parsed.data.chapter_number} already exists for this class level.` };
+        return { success: false, error: `Chapter ${parsed.data.chapter_number} already exists for this syllabus.` };
       }
       throw error;
     }
@@ -486,7 +684,7 @@ export async function deleteChapterAction(chapterId: string) {
   }
 }
 
-// ── 4. Topic CRUD Actions ─────────────────────────────────────────
+// ── 5. Topic CRUD Actions ─────────────────────────────────────────
 export async function createTopicAction(rawInput: CreateTopicInput) {
   const auth = await requireSuperAdmin();
   if (!auth.authorized) return { success: false, error: auth.error };
@@ -574,7 +772,7 @@ export async function deleteTopicAction(topicId: string) {
   }
 }
 
-// ── 5. Question CRUD Actions ──────────────────────────────────────
+// ── 6. MCQ Question CRUD Actions ───────────────────────────────────
 export async function createQuestionAction(rawInput: CreateQuestionInput) {
   const auth = await requireSuperAdmin();
   if (!auth.authorized) return { success: false, error: auth.error };
@@ -636,7 +834,7 @@ export async function updateQuestionAction(rawInput: UpdateQuestionInput) {
         script_type: parsed.data.script_type,
         time_limit_sec: parsed.data.time_limit_sec,
         explanation: parsed.data.explanation || null,
-        is_active: parsed.data.is_active,
+        is_active: parsed.data.is_active ?? true,
       })
       .eq("id", parsed.data.id)
       .select()
@@ -649,6 +847,47 @@ export async function updateQuestionAction(rawInput: UpdateQuestionInput) {
   } catch (err: any) {
     console.error("Update Question Error:", err);
     return { success: false, error: err.message || "Failed to update question" };
+  }
+}
+
+export async function duplicateQuestionAction(questionId: string) {
+  const auth = await requireSuperAdmin();
+  if (!auth.authorized) return { success: false, error: auth.error };
+
+  try {
+    const supabase = await createClient();
+    const { data: source, error: fetchErr } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("id", questionId)
+      .single();
+
+    if (fetchErr || !source) throw new Error("Question to duplicate not found.");
+
+    const { data, error } = await supabase
+      .from("questions")
+      .insert({
+        topic_id: source.topic_id,
+        prompt: `${source.prompt} (Copy)`,
+        options: source.options,
+        correct_option_index: source.correct_option_index,
+        difficulty: source.difficulty,
+        cognitive_type: source.cognitive_type,
+        script_type: source.script_type,
+        time_limit_sec: source.time_limit_sec,
+        explanation: source.explanation,
+        is_active: source.is_active,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath("/admin/question-bank");
+    return { success: true, question: data };
+  } catch (err: any) {
+    console.error("Duplicate Question Error:", err);
+    return { success: false, error: err.message || "Failed to duplicate question" };
   }
 }
 
@@ -669,79 +908,55 @@ export async function deleteQuestionAction(questionId: string) {
   }
 }
 
-export async function duplicateQuestionAction(questionId: string) {
-  const auth = await requireSuperAdmin();
-  if (!auth.authorized) return { success: false, error: auth.error };
-
-  try {
-    const supabase = await createClient();
-    const { data: original, error: fetchErr } = await supabase
-      .from("questions")
-      .select("*")
-      .eq("id", questionId)
-      .single();
-
-    if (fetchErr || !original) throw new Error("Original question not found");
-
-    const { data, error } = await supabase
-      .from("questions")
-      .insert({
-        topic_id: original.topic_id,
-        prompt: `${original.prompt} (Copy)`,
-        options: original.options,
-        correct_option_index: original.correct_option_index,
-        difficulty: original.difficulty,
-        cognitive_type: original.cognitive_type,
-        script_type: original.script_type,
-        time_limit_sec: original.time_limit_sec,
-        explanation: original.explanation,
-        is_active: original.is_active,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    revalidatePath("/admin/question-bank");
-    return { success: true, question: data };
-  } catch (err: any) {
-    console.error("Duplicate Question Error:", err);
-    return { success: false, error: err.message || "Failed to duplicate question" };
-  }
-}
-
-// ── 6. Bulk Update Action ─────────────────────────────────────────
+// ── 7. Bulk Operations ────────────────────────────────────────────
 export async function bulkUpdateQuestionsAction(rawInput: BulkUpdateQuestionsInput) {
   const auth = await requireSuperAdmin();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = bulkUpdateQuestionsSchema.safeParse(rawInput);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues?.[0]?.message || "Invalid bulk update request" };
+    return { success: false, error: parsed.error.issues?.[0]?.message || "Invalid bulk input" };
   }
+
+  const { question_ids, action, difficulty } = parsed.data;
 
   try {
     const supabase = await createClient();
-    const { question_ids, action, difficulty } = parsed.data;
 
     if (action === "DELETE") {
-      const { error } = await supabase.from("questions").delete().in("id", question_ids);
-      if (error) throw error;
-    } else if (action === "ACTIVATE") {
-      const { error } = await supabase.from("questions").update({ is_active: true }).in("id", question_ids);
-      if (error) throw error;
-    } else if (action === "DEACTIVATE") {
-      const { error } = await supabase.from("questions").update({ is_active: false }).in("id", question_ids);
+      const { error } = await supabase
+        .from("questions")
+        .delete()
+        .in("id", question_ids);
+
       if (error) throw error;
     } else if (action === "SET_DIFFICULTY" && difficulty) {
-      const { error } = await supabase.from("questions").update({ difficulty }).in("id", question_ids);
+      const { error } = await supabase
+        .from("questions")
+        .update({ difficulty })
+        .in("id", question_ids);
+
+      if (error) throw error;
+    } else if (action === "ACTIVATE") {
+      const { error } = await supabase
+        .from("questions")
+        .update({ is_active: true })
+        .in("id", question_ids);
+
+      if (error) throw error;
+    } else if (action === "DEACTIVATE") {
+      const { error } = await supabase
+        .from("questions")
+        .update({ is_active: false })
+        .in("id", question_ids);
+
       if (error) throw error;
     }
 
     revalidatePath("/admin/question-bank");
-    return { success: true };
+    return { success: true, count: question_ids.length };
   } catch (err: any) {
-    console.error("Bulk Update Questions Error:", err);
-    return { success: false, error: err.message || "Failed to execute bulk update" };
+    console.error("Bulk Action Error:", err);
+    return { success: false, error: err.message || "Failed to perform bulk operation" };
   }
 }

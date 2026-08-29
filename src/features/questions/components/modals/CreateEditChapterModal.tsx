@@ -22,8 +22,6 @@ export function CreateEditChapterModal() {
     isCreateChapterOpen,
     closeCreateChapter,
     editChapterData,
-    selectedSubjectId,
-    selectedClassLevel,
     vaultData,
     fetchVaultData,
     fetchQuestions,
@@ -56,7 +54,10 @@ export function CreateEditChapterModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSubjectId) return;
+    if (!vaultData?.curriculum_node_id) {
+      setError("No active curriculum node context found.");
+      return;
+    }
     if (!title.trim()) {
       setError("Chapter title is required.");
       return;
@@ -78,8 +79,7 @@ export function CreateEditChapterModal() {
         if (!res.success) throw new Error(res.error || "Failed to update chapter");
       } else {
         const res = await createChapterAction({
-          subject_id: selectedSubjectId,
-          class_level: selectedClassLevel,
+          curriculum_node_id: vaultData.curriculum_node_id,
           chapter_number: chapterNumber,
           title: title.trim(),
           description: description.trim() || null,
@@ -113,7 +113,7 @@ export function CreateEditChapterModal() {
                 {isEditing ? "Edit Syllabus Chapter" : "Create Syllabus Chapter"}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400">
-                Class {selectedClassLevel} • {vaultData?.subject?.name || "Subject"}
+                {vaultData?.board?.code} • {vaultData?.discipline?.code} • Class {vaultData?.classLevel} • {vaultData?.subject?.name || "Subject"}
               </DialogDescription>
             </div>
           </div>

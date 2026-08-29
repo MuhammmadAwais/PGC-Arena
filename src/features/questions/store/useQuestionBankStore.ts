@@ -26,8 +26,7 @@ export interface DeleteQuestionModalState {
 
 interface QuestionBankStoreState {
   // ── Hierarchy & Selection ───────────────────────────────────
-  selectedSubjectId: string | null;
-  selectedClassLevel: ClassLevel;
+  curriculumNodeId: string | null;
   vaultData: SubjectVaultDataResponse | null;
   activeChapterId: string | null;
   activeTopicId: string | null;
@@ -69,10 +68,9 @@ interface QuestionBankStoreState {
   deleteModalData: DeleteQuestionModalState;
 
   // ── Actions ─────────────────────────────────────────────────
-  initSubjectVault: (subjectId: string, classLevel?: ClassLevel) => Promise<void>;
+  initNodeVault: (curriculumNodeId: string) => Promise<void>;
   setActiveChapter: (chapterId: string | null) => void;
   setActiveTopic: (topicId: string | null) => void;
-  setSelectedClassLevel: (classLevel: ClassLevel) => void;
   setSearchQuery: (query: string) => void;
   setDifficultyFilter: (difficulty: "ALL" | Difficulty) => void;
   setCognitiveFilter: (cognitiveType: "ALL" | CognitiveType) => void;
@@ -118,8 +116,7 @@ interface QuestionBankStoreState {
 
 export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) => ({
   // ── Initial State ───────────────────────────────────────────
-  selectedSubjectId: null,
-  selectedClassLevel: 11,
+  curriculumNodeId: null,
   vaultData: null,
   activeChapterId: null,
   activeTopicId: null,
@@ -163,10 +160,9 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
   },
 
   // ── Core Navigation & Init ──────────────────────────────────
-  initSubjectVault: async (subjectId: string, classLevel = 11) => {
+  initNodeVault: async (nodeId: string) => {
     set({
-      selectedSubjectId: subjectId,
-      selectedClassLevel: classLevel,
+      curriculumNodeId: nodeId,
       activeChapterId: null,
       activeTopicId: null,
       selectedQuestionIds: [],
@@ -183,13 +179,6 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
 
   setActiveTopic: (topicId: string | null) => {
     set({ activeTopicId: topicId, pagination: { ...get().pagination, page: 1 } });
-    get().fetchQuestions();
-  },
-
-  setSelectedClassLevel: (classLevel: ClassLevel) => {
-    if (get().selectedClassLevel === classLevel) return;
-    set({ selectedClassLevel: classLevel, activeChapterId: null, activeTopicId: null });
-    get().fetchVaultData();
     get().fetchQuestions();
   },
 
@@ -252,15 +241,15 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
 
   // ── Data Fetching ───────────────────────────────────────────
   fetchVaultData: async () => {
-    const { selectedSubjectId, selectedClassLevel } = get();
-    if (!selectedSubjectId) return;
+    const { curriculumNodeId } = get();
+    if (!curriculumNodeId) return;
 
     set({ isLoadingVault: true, error: null });
 
     try {
-      const res = await getSubjectVaultData(selectedSubjectId, selectedClassLevel);
+      const res = await getSubjectVaultData(curriculumNodeId);
       if (!res.success) {
-        set({ error: res.error || "Failed to load subject vault", isLoadingVault: false });
+        set({ error: res.error || "Failed to load node vault", isLoadingVault: false });
         return;
       }
       set({ vaultData: res, isLoadingVault: false });
@@ -271,8 +260,7 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
 
   fetchQuestions: async () => {
     const {
-      selectedSubjectId,
-      selectedClassLevel,
+      curriculumNodeId,
       activeChapterId,
       activeTopicId,
       searchQuery,
@@ -280,14 +268,13 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
       pagination,
     } = get();
 
-    if (!selectedSubjectId) return;
+    if (!curriculumNodeId) return;
 
     set({ isLoadingQuestions: true });
 
     try {
       const res = await getVaultQuestionsAction({
-        subjectId: selectedSubjectId,
-        classLevel: selectedClassLevel,
+        curriculumNodeId,
         chapterId: activeChapterId,
         topicId: activeTopicId,
         page: pagination.page,

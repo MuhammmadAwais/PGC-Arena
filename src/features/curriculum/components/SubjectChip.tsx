@@ -150,7 +150,7 @@ export function SubjectChip({ node, boardName, disciplineName }: SubjectChipProp
 
             <DropdownMenuItem
               onClick={() => {
-                window.location.href = `/admin/question-bank?subjectId=${subject.id}&classLevel=${node.class_level}`;
+                window.location.href = `/admin/question-bank/${node.id}`;
               }}
               className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
             >

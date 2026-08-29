@@ -16,17 +16,15 @@ import {
   Filter,
   X,
   GraduationCap,
+  Shield,
 } from "lucide-react";
 import { useQuestionBankStore } from "../store/useQuestionBankStore";
 import type { Difficulty, CognitiveType } from "../types/questionTypes";
-import type { ClassLevel } from "@/features/curriculum/types/curriculumTypes";
 
 export function QuestionVaultHeader() {
   const router = useRouter();
   const {
     vaultData,
-    selectedClassLevel,
-    setSelectedClassLevel,
     searchQuery,
     setSearchQuery,
     filters,
@@ -40,7 +38,10 @@ export function QuestionVaultHeader() {
     openCreateMcq,
   } = useQuestionBankStore();
 
+  const board = vaultData?.board;
+  const discipline = vaultData?.discipline;
   const subject = vaultData?.subject;
+  const classLevel = vaultData?.classLevel || 11;
   const stats = vaultData?.stats || {
     totalChapters: 0,
     totalTopics: 0,
@@ -52,8 +53,9 @@ export function QuestionVaultHeader() {
 
   const handleLaunchStudio = () => {
     const params = new URLSearchParams();
+    if (vaultData?.curriculum_node_id) params.set("nodeId", vaultData.curriculum_node_id);
     if (subject?.id) params.set("subjectId", subject.id);
-    params.set("classLevel", selectedClassLevel.toString());
+    params.set("classLevel", classLevel.toString());
     if (activeChapterId) params.set("chapterId", activeChapterId);
     if (activeTopicId) params.set("topicId", activeTopicId);
 
@@ -78,6 +80,20 @@ export function QuestionVaultHeader() {
         >
           Question Bank
         </Link>
+        {board && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="text-slate-300">{board.code || board.name}</span>
+          </>
+        )}
+        {discipline && (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="text-slate-300">{discipline.code || discipline.name}</span>
+          </>
+        )}
+        <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+        <span className="text-cyan-400 font-mono">Class {classLevel}</span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
         <span className="text-pgc-red font-display uppercase tracking-wider font-bold">
           {subject ? subject.name : "Subject Vault"}
@@ -105,8 +121,18 @@ export function QuestionVaultHeader() {
               <h1 className="text-xl sm:text-2xl font-extrabold text-white font-display tracking-tight truncate">
                 {subject?.name || "Subject Question Vault"}
               </h1>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-white/10 text-cyan-300 font-mono">
-                {subject?.code || "SUB"}
+              {board && (
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-display">
+                  {board.code}
+                </span>
+              )}
+              {discipline && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-mono">
+                  {discipline.code}
+                </span>
+              )}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-pgc-red/20 text-white border border-pgc-red/40 font-display">
+                Class {classLevel}
               </span>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -142,34 +168,8 @@ export function QuestionVaultHeader() {
           </div>
         </div>
 
-        {/* Action CTAs & Class Switcher */}
+        {/* Action CTAs */}
         <div className="flex items-center gap-3 flex-wrap self-start lg:self-center">
-          {/* Class 11 vs 12 Switcher */}
-          <div className="flex items-center p-1 rounded-xl bg-black/60 border border-white/10">
-            <button
-              type="button"
-              onClick={() => setSelectedClassLevel(11)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display uppercase tracking-wider transition-all cursor-pointer ${
-                selectedClassLevel === 11
-                  ? "bg-pgc-red/20 text-white border border-pgc-red/50 shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Class 11
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedClassLevel(12)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display uppercase tracking-wider transition-all cursor-pointer ${
-                selectedClassLevel === 12
-                  ? "bg-pgc-red/20 text-white border border-pgc-red/50 shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Class 12
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={handleLaunchStudio}
