@@ -7,6 +7,7 @@ import {
   Noto_Nastaliq_Urdu,
   Amiri, Geist } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});

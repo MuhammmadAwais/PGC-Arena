@@ -17,6 +17,7 @@ import {
 import { useQuestionBankStore } from "../store/useQuestionBankStore";
 import { McqCard } from "./McqCard";
 import { BatchSelectionBar } from "./BatchSelectionBar";
+import { MathRenderer } from "@/components/ui/MathRenderer";
 import type { Difficulty } from "../types/questionTypes";
 
 export function McqCardGrid() {
@@ -204,7 +205,7 @@ export function McqCardGrid() {
                             )}
                           </td>
                           <td className="p-3">
-                            <p
+                            <div
                               className={`line-clamp-2 text-white ${
                                 isUrdu
                                   ? "font-urdu-nastaliq text-right text-sm"
@@ -213,19 +214,19 @@ export function McqCardGrid() {
                                   : "font-sans font-medium"
                               }`}
                             >
-                              {q.prompt}
-                            </p>
+                              <MathRenderer content={q.prompt} inline />
+                            </div>
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-1.5 text-emerald-300">
                               <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                              <span
+                              <div
                                 className={`truncate max-w-[180px] font-medium ${
                                   isUrdu ? "font-urdu-nastaliq" : isArabic ? "font-arabic" : ""
                                 }`}
                               >
-                                {correctOpt}
-                              </span>
+                                <MathRenderer content={correctOpt} inline />
+                              </div>
                             </div>
                           </td>
                           <td className="p-3">

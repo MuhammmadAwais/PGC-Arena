@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Question, Difficulty } from "../types/questionTypes";
 import { useQuestionBankStore } from "../store/useQuestionBankStore";
+import { MathRenderer } from "@/components/ui/MathRenderer";
 
 interface McqCardProps {
   question: Question;
@@ -123,7 +124,7 @@ export function McqCard({ question, index }: McqCardProps) {
 
       {/* ── Question Stem / Prompt ────────────────────────────────── */}
       <div>
-        <p
+        <div
           className={`text-sm text-white leading-relaxed ${
             isUrdu
               ? "font-urdu-nastaliq text-right text-base leading-loose"
@@ -132,8 +133,8 @@ export function McqCard({ question, index }: McqCardProps) {
               : "font-sans font-medium"
           }`}
         >
-          {question.prompt}
-        </p>
+          <MathRenderer content={question.prompt} />
+        </div>
       </div>
 
       {/* ── 4 MCQ Options Grid ────────────────────────────────────── */}
@@ -161,8 +162,8 @@ export function McqCard({ question, index }: McqCardProps) {
                 >
                   {letter}
                 </span>
-                <span
-                  className={`text-xs truncate ${
+                <div
+                  className={`text-xs ${
                     isUrdu
                       ? "font-urdu-nastaliq text-right text-sm"
                       : isArabic
@@ -170,8 +171,8 @@ export function McqCard({ question, index }: McqCardProps) {
                       : "font-sans"
                   } ${isCorrect ? "font-bold text-white" : "font-normal"}`}
                 >
-                  {opt}
-                </span>
+                  <MathRenderer content={opt} inline />
+                </div>
               </div>
 
               {isCorrect && (
@@ -200,7 +201,7 @@ export function McqCard({ question, index }: McqCardProps) {
 
           {showExplanation && (
             <div className="mt-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 leading-relaxed font-sans animate-in fade-in-50 duration-150">
-              {question.explanation}
+              <MathRenderer content={question.explanation} />
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   HelpCircle,
   Check,
@@ -8,8 +8,7 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  Code2,
-  Languages,
+  Eye,
 } from "lucide-react";
 import {
   Dialog,
@@ -18,7 +17,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useQuestionBankStore } from "../../store/useQuestionBankStore";
 import {
@@ -27,6 +25,45 @@ import {
 } from "../../actions/questionActions";
 import type { Difficulty, CognitiveType } from "../../types/questionTypes";
 import type { ScriptType } from "@/features/curriculum/types/curriculumTypes";
+import { MathInput } from "@/components/ui/MathInput";
+import { MathRenderer } from "@/components/ui/MathRenderer";
+
+const UNICODE_TO_LATEX_MAP: Record<string, string> = {
+  "²": "^2",
+  "³": "^3",
+  "⁴": "^4",
+  "½": "\\frac{1}{2}",
+  "⅓": "\\frac{1}{3}",
+  "¼": "\\frac{1}{4}",
+  "¾": "\\frac{3}{4}",
+  "±": "\\pm ",
+  "°": "^\\circ ",
+  "≤": "\\le ",
+  "≥": "\\ge ",
+  "≠": "\\ne ",
+  "≈": "\\approx ",
+  "∞": "\\infty ",
+  "Δ": "\\Delta ",
+  "π": "\\pi ",
+  "θ": "\\theta ",
+  "×": "\\times ",
+  "·": "\\cdot ",
+  "÷": "\\div ",
+  "Ω": "\\Omega ",
+  "λ": "\\lambda ",
+  "α": "\\alpha ",
+  "β": "\\beta ",
+  "μ": "\\mu ",
+  "√": "\\sqrt{}",
+};
+
+function sanitizePastedMath(text: string): string {
+  let result = text;
+  for (const [unicode, latex] of Object.entries(UNICODE_TO_LATEX_MAP)) {
+    result = result.split(unicode).join(latex);
+  }
+  return result;
+}
 
 export function CreateEditMcqModal() {
   const {
@@ -59,7 +96,6 @@ export function CreateEditMcqModal() {
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLatexHelper, setShowLatexHelper] = useState(false);
 
   // Flatten all topics for selection dropdown
   const allTopics = (vaultData?.chapters || []).flatMap((c) =>
@@ -87,7 +123,6 @@ export function CreateEditMcqModal() {
       setExplanation(editMcqData.explanation || "");
       setIsActive(editMcqData.is_active);
     } else {
-      // Default to active topic, or first topic in active chapter, or first available topic
       const defaultTopic =
         activeTopicId ||
         allTopics.find((t) => t.chapter_id === activeChapterId)?.id ||
@@ -106,7 +141,6 @@ export function CreateEditMcqModal() {
       setIsActive(true);
     }
     setError(null);
-    setShowLatexHelper(false);
   }, [editMcqData, isCreateEditMcqOpen, activeTopicId, activeChapterId, vaultData]);
 
   const handleOptionChange = (idx: number, value: string) => {
@@ -115,22 +149,34 @@ export function CreateEditMcqModal() {
     setOptions(updated);
   };
 
-  const handleInsertLatex = (latex: string) => {
-    setPrompt((prev) => `${prev} $${latex}$`);
+  const handleOptionPaste = (idx: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData("text/plain");
+    if (!pastedText) return;
+
+    const sanitized = sanitizePastedMath(pastedText);
+    if (sanitized !== pastedText) {
+      e.preventDefault();
+      const input = e.currentTarget;
+      const start = input.selectionStart ?? options[idx].length;
+      const end = input.selectionEnd ?? options[idx].length;
+      const before = options[idx].substring(0, start);
+      const after = options[idx].substring(end);
+      handleOptionChange(idx, before + sanitized + after);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topicId) {
-      setError("Please select a topic for this question.");
+      setError("Please select a valid curriculum topic.");
       return;
     }
     if (!prompt.trim()) {
-      setError("Question prompt is required.");
+      setError("Question prompt cannot be empty.");
       return;
     }
     if (options.some((opt) => !opt.trim())) {
-      setError("All 4 option fields must be filled.");
+      setError("All 4 MCQ options must be filled.");
       return;
     }
 
@@ -143,40 +189,45 @@ export function CreateEditMcqModal() {
           id: editMcqData.id,
           topic_id: topicId,
           prompt: prompt.trim(),
-          options,
+          options: options.map((o) => o.trim()) as [string, string, string, string],
           correct_option_index: correctOptionIndex,
           difficulty,
           cognitive_type: cognitiveType,
           script_type: scriptType,
           time_limit_sec: timeLimitSec,
-          explanation: explanation.trim() || null,
+          explanation: explanation.trim() || undefined,
           is_active: isActive,
         });
 
-        if (!res.success) throw new Error(res.error || "Failed to update question");
+        if (!res.success) {
+          setError(res.error || "Failed to update question");
+          return;
+        }
       } else {
         const res = await createQuestionAction({
           topic_id: topicId,
           prompt: prompt.trim(),
-          options,
+          options: options.map((o) => o.trim()) as [string, string, string, string],
           correct_option_index: correctOptionIndex,
           difficulty,
           cognitive_type: cognitiveType,
           script_type: scriptType,
           time_limit_sec: timeLimitSec,
-          explanation: explanation.trim() || null,
+          explanation: explanation.trim() || undefined,
           is_active: isActive,
         });
 
-        if (!res.success) throw new Error(res.error || "Failed to create question");
+        if (!res.success) {
+          setError(res.error || "Failed to create question");
+          return;
+        }
       }
 
-      await fetchQuestions();
       await fetchVaultData();
+      await fetchQuestions();
       closeCreateMcq();
     } catch (err: any) {
-      console.error("MCQ modal error:", err);
-      setError(err.message || "Failed to save question");
+      setError(err?.message || "Unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -230,71 +281,15 @@ export function CreateEditMcqModal() {
             </select>
           </div>
 
-          {/* Question Prompt + LaTeX Math Helper */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
-                Question Prompt <span className="text-pgc-red">*</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowLatexHelper(!showLatexHelper)}
-                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1 cursor-pointer"
-              >
-                <Code2 className="w-3 h-3" />
-                <span>{showLatexHelper ? "Hide LaTeX" : "LaTeX Math Helper"}</span>
-              </button>
-            </div>
-
-            {showLatexHelper && (
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-2 flex-wrap text-xs">
-                <span className="text-[10px] text-slate-400 font-mono">Snippets:</span>
-                <button
-                  type="button"
-                  onClick={() => handleInsertLatex("\\frac{a}{b}")}
-                  className="px-2 py-0.5 rounded bg-black/60 hover:bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-white/10"
-                >
-                  \frac&#123;a&#125;&#123;b&#125;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertLatex("\\sqrt{x}")}
-                  className="px-2 py-0.5 rounded bg-black/60 hover:bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-white/10"
-                >
-                  \sqrt&#123;x&#125;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertLatex("x^2 + y^2 = r^2")}
-                  className="px-2 py-0.5 rounded bg-black/60 hover:bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-white/10"
-                >
-                  x^2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertLatex("\\sum_{i=1}^n")}
-                  className="px-2 py-0.5 rounded bg-black/60 hover:bg-cyan-500/20 text-cyan-300 text-[10px] font-mono border border-white/10"
-                >
-                  \sum
-                </button>
-              </div>
-            )}
-
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="State the examination or tournament question prompt here..."
-              rows={3}
-              required
-              className={`w-full px-3 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 resize-none ${
-                scriptType === "URDU_NASTALIQ"
-                  ? "font-urdu-nastaliq text-right leading-loose text-sm"
-                  : scriptType === "ARABIC"
-                  ? "font-arabic text-right leading-loose text-sm"
-                  : "font-sans"
-              }`}
-            />
-          </div>
+          {/* Question Prompt with MathInput */}
+          <MathInput
+            label="Question Prompt"
+            required
+            value={prompt}
+            onChange={setPrompt}
+            placeholder="Type question prompt with LaTeX math (e.g. Which physical quantity has dimensions $[M L^2 T^{-2}]$?)..."
+            rows={3}
+          />
 
           {/* 4 Options Grid with Correct Answer Radio */}
           <div className="space-y-2">
@@ -303,7 +298,7 @@ export function CreateEditMcqModal() {
                 Options &amp; Correct Answer Selection <span className="text-pgc-red">*</span>
               </label>
               <span className="text-[10px] text-emerald-400 font-semibold">
-                Click Radio to Set Correct Answer
+                Click Option Letter to Set Correct
               </span>
             </div>
 
@@ -314,42 +309,52 @@ export function CreateEditMcqModal() {
                 return (
                   <div
                     key={idx}
-                    className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all ${
+                    className={`p-2.5 rounded-xl border flex flex-col gap-1.5 transition-all ${
                       isCorrect
                         ? "bg-emerald-500/10 border-emerald-500/50"
                         : "bg-black/40 border-white/10"
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setCorrectOptionIndex(idx)}
-                      className={`h-6 w-6 rounded-lg font-display text-xs font-bold flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                        isCorrect
-                          ? "bg-emerald-500 text-black shadow-sm"
-                          : "bg-white/10 text-slate-400 hover:bg-white/20"
-                      }`}
-                      title="Set as correct answer"
-                    >
-                      {optionLabels[idx]}
-                    </button>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setCorrectOptionIndex(idx)}
+                        className={`h-6 w-6 rounded-lg font-display text-xs font-bold flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                          isCorrect
+                            ? "bg-emerald-500 text-black shadow-sm"
+                            : "bg-white/10 text-slate-400 hover:bg-white/20"
+                        }`}
+                        title="Set as correct answer"
+                      >
+                        {optionLabels[idx]}
+                      </button>
 
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => handleOptionChange(idx, e.target.value)}
-                      placeholder={`Option ${optionLabels[idx]} text...`}
-                      required
-                      className={`flex-1 bg-transparent border-0 text-xs text-white placeholder-slate-500 focus:outline-none ${
-                        scriptType === "URDU_NASTALIQ"
-                          ? "font-urdu-nastaliq text-right"
-                          : scriptType === "ARABIC"
-                          ? "font-arabic text-right"
-                          : "font-sans"
-                      }`}
-                    />
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={(e) => handleOptionChange(idx, e.target.value)}
+                        onPaste={(e) => handleOptionPaste(idx, e)}
+                        placeholder={`Option ${optionLabels[idx]} text (e.g. $[M L^2 T^{-2}]$)...`}
+                        required
+                        className={`flex-1 bg-transparent border-0 text-xs text-white placeholder-slate-500 focus:outline-none ${
+                          scriptType === "URDU_NASTALIQ"
+                            ? "font-urdu-nastaliq text-right"
+                            : scriptType === "ARABIC"
+                            ? "font-arabic text-right"
+                            : "font-sans"
+                        }`}
+                      />
 
-                    {isCorrect && (
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[3]" />
+                      {isCorrect && (
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[3]" />
+                      )}
+                    </div>
+
+                    {/* Option Mini KaTeX Preview if LaTeX syntax exists */}
+                    {opt.includes("$") && (
+                      <div className="text-[11px] text-slate-300 border-t border-white/[0.04] pt-1 px-1">
+                        <MathRenderer content={opt} inline />
+                      </div>
                     )}
                   </div>
                 );
@@ -423,19 +428,15 @@ export function CreateEditMcqModal() {
             </div>
           </div>
 
-          {/* Pedagogical Explanation */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
-              Pedagogical Explanation / Solution Steps (Optional)
-            </label>
-            <textarea
-              value={explanation}
-              onChange={(e) => setExplanation(e.target.value)}
-              placeholder="Provide solution steps or textbook references to help students during post-match reviews."
-              rows={2}
-              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 resize-none font-sans"
-            />
-          </div>
+          {/* Pedagogical Explanation with MathInput */}
+          <MathInput
+            label="Pedagogical Explanation / Solution Steps (Optional)"
+            value={explanation}
+            onChange={setExplanation}
+            placeholder="Provide step-by-step solution or textbook references with math formulas (e.g. $[W] = [F][d] = [M L T^{-2}][L] = [M L^2 T^{-2}]$)..."
+            rows={2}
+            hideChips
+          />
 
           {/* Active Status */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-white/10">
