@@ -636,25 +636,23 @@ export async function createChapterAction(rawInput: CreateChapterInput) {
   }
 
   try {
-    const supabase = await createClient();
-
     // Resolve subject_id and class_level from curriculum_node if not explicitly passed
     let subjectId = parsed.data.subject_id;
     let classLevel = parsed.data.class_level;
 
     if (!subjectId || !classLevel) {
-      const { data: nodeData, error: nodeErr } = await supabase
+      const { data: nodeData, error: nodeErr } = await supabaseAdmin
         .from("curriculum_nodes")
         .select("subject_id, class_level")
         .eq("id", parsed.data.curriculum_node_id)
-        .single();
+        .maybeSingle();
 
       if (nodeErr || !nodeData) throw new Error("Referenced curriculum node not found.");
       subjectId = nodeData.subject_id;
       classLevel = nodeData.class_level as ClassLevel;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("chapters")
       .insert({
         curriculum_node_id: parsed.data.curriculum_node_id,
@@ -693,14 +691,13 @@ export async function updateChapterAction(rawInput: UpdateChapterInput) {
   }
 
   try {
-    const supabase = await createClient();
     const updatePayload: any = {};
     if (parsed.data.chapter_number !== undefined) updatePayload.chapter_number = parsed.data.chapter_number;
     if (parsed.data.title !== undefined) updatePayload.title = parsed.data.title;
     if (parsed.data.description !== undefined) updatePayload.description = parsed.data.description;
     if (parsed.data.is_active !== undefined) updatePayload.is_active = parsed.data.is_active;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("chapters")
       .update(updatePayload)
       .eq("id", parsed.data.id)
@@ -722,8 +719,7 @@ export async function deleteChapterAction(chapterId: string) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.from("chapters").delete().eq("id", chapterId);
+    const { error } = await supabaseAdmin.from("chapters").delete().eq("id", chapterId);
     if (error) throw error;
 
     revalidatePath("/admin/question-bank");
@@ -745,8 +741,7 @@ export async function createTopicAction(rawInput: CreateTopicInput) {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("topics")
       .insert({
         chapter_id: parsed.data.chapter_id,
@@ -782,13 +777,12 @@ export async function updateTopicAction(rawInput: UpdateTopicInput) {
   }
 
   try {
-    const supabase = await createClient();
     const updatePayload: any = {};
     if (parsed.data.topic_number !== undefined) updatePayload.topic_number = parsed.data.topic_number;
     if (parsed.data.title !== undefined) updatePayload.title = parsed.data.title;
     if (parsed.data.is_active !== undefined) updatePayload.is_active = parsed.data.is_active;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("topics")
       .update(updatePayload)
       .eq("id", parsed.data.id)
@@ -810,8 +804,7 @@ export async function deleteTopicAction(topicId: string) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.from("topics").delete().eq("id", topicId);
+    const { error } = await supabaseAdmin.from("topics").delete().eq("id", topicId);
     if (error) throw error;
 
     revalidatePath("/admin/question-bank");
@@ -833,8 +826,7 @@ export async function createQuestionAction(rawInput: CreateQuestionInput) {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("questions")
       .insert({
         topic_id: parsed.data.topic_id,
@@ -871,8 +863,7 @@ export async function updateQuestionAction(rawInput: UpdateQuestionInput) {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("questions")
       .update({
         topic_id: parsed.data.topic_id,
@@ -905,16 +896,15 @@ export async function duplicateQuestionAction(questionId: string) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   try {
-    const supabase = await createClient();
-    const { data: source, error: fetchErr } = await supabase
+    const { data: source, error: fetchErr } = await supabaseAdmin
       .from("questions")
       .select("*")
       .eq("id", questionId)
-      .single();
+      .maybeSingle();
 
     if (fetchErr || !source) throw new Error("Question to duplicate not found.");
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("questions")
       .insert({
         topic_id: source.topic_id,
@@ -946,8 +936,7 @@ export async function deleteQuestionAction(questionId: string) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.from("questions").delete().eq("id", questionId);
+    const { error } = await supabaseAdmin.from("questions").delete().eq("id", questionId);
     if (error) throw error;
 
     revalidatePath("/admin/question-bank");
@@ -971,31 +960,29 @@ export async function bulkUpdateQuestionsAction(rawInput: BulkUpdateQuestionsInp
   const { question_ids, action, difficulty } = parsed.data;
 
   try {
-    const supabase = await createClient();
-
     if (action === "DELETE") {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("questions")
         .delete()
         .in("id", question_ids);
 
       if (error) throw error;
     } else if (action === "SET_DIFFICULTY" && difficulty) {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("questions")
         .update({ difficulty })
         .in("id", question_ids);
 
       if (error) throw error;
     } else if (action === "ACTIVATE") {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("questions")
         .update({ is_active: true })
         .in("id", question_ids);
 
       if (error) throw error;
     } else if (action === "DEACTIVATE") {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("questions")
         .update({ is_active: false })
         .in("id", question_ids);

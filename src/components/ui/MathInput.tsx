@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface MathChip {
   label: string;
   latex: string;
-  cursorOffset?: number; // offset from start of inserted latex to place cursor
+  cursorOffset?: number;
 }
 
 const QUICK_INSERT_CHIPS: MathChip[] = [
@@ -168,10 +168,10 @@ export function MathInput({
   );
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1.5", className)}>
       {label && (
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-slate-300">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
             {label} {required && <span className="text-pgc-red">*</span>}
           </label>
           <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
@@ -181,10 +181,10 @@ export function MathInput({
         </div>
       )}
 
-      {/* ── Quick-Insert Toolbar ──────────────────────────────────── */}
+      {/* ── Quick-Insert Toolbar (Clean wrap, no ugly scrollbars) ─── */}
       {!hideChips && !disabled && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-white/10 text-xs">
-          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 uppercase tracking-wider pr-1">
+        <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5">
+          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0 uppercase tracking-wider">
             Insert:
           </span>
           {QUICK_INSERT_CHIPS.map((chip) => (
@@ -192,7 +192,7 @@ export function MathInput({
               key={chip.label}
               type="button"
               onClick={() => insertLatex(chip.latex, chip.cursorOffset)}
-              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-cyan-500/15 border border-white/10 hover:border-cyan-400/40 text-slate-300 hover:text-cyan-300 text-[11px] font-mono font-medium shrink-0 transition-colors cursor-pointer shadow-sm"
+              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-cyan-500/15 border border-white/10 hover:border-cyan-400/40 text-slate-300 hover:text-cyan-300 text-[10px] font-mono font-medium transition-colors cursor-pointer shadow-sm"
               title={`Insert ${chip.label}`}
             >
               {chip.label}
@@ -212,14 +212,14 @@ export function MathInput({
           rows={rows}
           disabled={disabled}
           required={required}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0C16]/50 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/30 text-sm font-sans resize-y leading-relaxed transition-colors disabled:opacity-50"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 text-xs font-sans resize-y leading-relaxed transition-colors disabled:opacity-50"
         />
       </div>
 
       {/* ── Live Preview Pane ────────────────────────────────────── */}
       {!hidePreview && (
-        <div className="rounded-xl bg-black/40 border border-white/[0.06] p-3.5 relative overflow-hidden transition-all min-h-[52px]">
-          <div className="flex items-center justify-between border-b border-white/[0.04] pb-1.5 mb-2">
+        <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-3 relative overflow-hidden transition-all min-h-[44px]">
+          <div className="flex items-center justify-between border-b border-white/[0.04] pb-1 mb-1.5">
             <div className="flex items-center gap-1.5 text-cyan-400">
               <Eye className="w-3 h-3" />
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider">
@@ -232,7 +232,7 @@ export function MathInput({
           </div>
 
           {value ? (
-            <MathRenderer content={value} className="text-sm" />
+            <MathRenderer content={value} className="text-xs text-white" />
           ) : (
             <p className="text-xs text-slate-500 italic">
               Live math preview will render here as you type...

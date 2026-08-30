@@ -12,6 +12,29 @@ interface MathRendererProps {
   inline?: boolean;
 }
 
+function preprocessMath(content: string): string {
+  if (!content) return "";
+  let text = content;
+
+  // Convert LaTeX delimiters \( ... \) and \[ ... \] to $ and $$
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, "$$$1$$");
+  text = text.replace(/\\\[([\s\S]*?)\\\]/g, "$$$$$$1$$$$");
+
+  // If text doesn't contain $, auto-wrap dimensional analysis and physics formulas
+  if (!text.includes("$")) {
+    // Match consecutive bracketed dimensions e.g. [L][M L T^-2] or [M L^2 T^-2]
+    text = text.replace(/(?:\[[A-Z0-9\s\^\-\+\{\}\=]+\])+/g, (match) => {
+      const cleaned = match.replace(/\^([0-9\-]+)/g, "^{$1}");
+      return `$${cleaned}$`;
+    });
+
+    // Torque formula: (tau = r x F) -> $(\tau = r \times F)$
+    text = text.replace(/\(?tau\s*=\s*r\s*x\s*F\)?/gi, "$(\\tau = r \\times F)$");
+  }
+
+  return text;
+}
+
 export const MathRenderer = memo(function MathRenderer({
   content,
   className,
@@ -21,9 +44,7 @@ export const MathRenderer = memo(function MathRenderer({
     return null;
   }
 
-  // Pre-process content if needed to ensure standard math delimiters are recognized
-  // e.g. converting escaped \$ to $ if exported raw
-  const formattedContent = content;
+  const formattedContent = preprocessMath(content);
 
   if (inline) {
     return (
