@@ -99,11 +99,12 @@ export function AssignSubjectModal() {
 
   return (
     <Dialog open={!!assignSubjectTarget} onOpenChange={(open) => !open && closeAssignSubject()}>
-      <DialogContent className="max-w-lg p-6 bg-[#0B0C16]/95 border-white/15 text-white backdrop-blur-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-xl w-[95vw] p-6 sm:p-7 bg-[#0e111d] border border-white/[0.08] text-white backdrop-blur-2xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+        {/* ── Dialog Header ───────────────────────────────────────── */}
+        <DialogHeader className="border-b border-white/[0.06] pb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-pgc-red/10 border border-pgc-red/20 flex items-center justify-center">
-              <LinkIcon className="w-5 h-5 text-pgc-red" />
+            <div className="h-10 w-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+              <LinkIcon className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold font-display tracking-tight text-white">
@@ -124,26 +125,26 @@ export function AssignSubjectModal() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Target lane badge summary */}
-          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between text-xs font-sans">
-            <div>
-              <span className="text-slate-400">Board: </span>
-              <strong className="text-white font-display">{assignSubjectTarget.boardName}</strong>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          {/* ── Target Lane Badges ──────────────────────────────────── */}
+          <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md flex items-center justify-between gap-2 text-xs flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono uppercase text-slate-400">Board:</span>
+              <strong className="text-white font-display text-xs">{assignSubjectTarget.boardName}</strong>
             </div>
-            <div>
-              <span className="text-slate-400">Discipline: </span>
-              <strong className="text-cyan-300 font-display">{assignSubjectTarget.disciplineName}</strong>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono uppercase text-slate-400">Discipline:</span>
+              <strong className="text-cyan-300 font-display text-xs">{assignSubjectTarget.disciplineName}</strong>
             </div>
-            <div className="px-2 py-0.5 rounded-md bg-pgc-red/20 text-white font-bold font-display border border-pgc-red/40">
+            <div className="px-2.5 py-0.5 rounded-md bg-pgc-red/20 text-white font-bold font-display text-[10px] border border-pgc-red/40 uppercase tracking-wider">
               Class {assignSubjectTarget.classLevel}
             </div>
           </div>
 
-          {/* Search Master Subjects */}
-          <div className="space-y-2">
+          {/* ── Search Master Subjects ──────────────────────────────── */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
+              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 font-display">
                 Select Master Subject
               </label>
               <button
@@ -152,27 +153,27 @@ export function AssignSubjectModal() {
                   closeAssignSubject();
                   openCreateSubject();
                 }}
-                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1 cursor-pointer"
+                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <Plus className="w-3 h-3" />
-                <span>Create New Subject</span>
+                <span>Create Master Subject</span>
               </button>
             </div>
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search master subjects by name or code..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/50 border border-white/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 font-sans transition-all"
               />
             </div>
           </div>
 
-          {/* Subjects Selection List */}
-          <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-white/10">
+          {/* ── Subjects Selection List ─────────────────────────────── */}
+          <div className="max-h-64 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-white/10">
             {filteredSubjects.length > 0 ? (
               filteredSubjects.map((sub) => {
                 const isAlreadyMapped = mappedSubjectIds.has(sub.id);
@@ -184,16 +185,16 @@ export function AssignSubjectModal() {
                     type="button"
                     disabled={isAlreadyMapped}
                     onClick={() => setSelectedSubjectId(sub.id)}
-                    className={`w-full p-2.5 rounded-xl border flex items-center justify-between gap-3 text-left transition-all cursor-pointer ${
+                    className={`w-full p-3 rounded-2xl border flex items-center justify-between gap-3 text-left transition-all cursor-pointer backdrop-blur-md ${
                       isAlreadyMapped
                         ? "bg-white/[0.01] border-white/[0.04] opacity-40 cursor-not-allowed"
                         : isSelected
-                        ? "bg-cyan-500/20 border-cyan-400 text-white shadow-md shadow-cyan-500/10"
-                        : "bg-black/30 border-white/10 hover:bg-white/[0.05] hover:border-white/20 text-slate-200"
+                        ? "bg-cyan-500/10 border-cyan-400/60 text-white shadow-md shadow-cyan-500/15 ring-1 ring-cyan-400/30"
+                        : "bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05] hover:border-white/20 text-slate-200"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-8 w-8 rounded-lg overflow-hidden bg-black/40 border border-white/10 shrink-0 flex items-center justify-center">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-9 w-9 rounded-xl overflow-hidden bg-black/40 border border-white/10 shrink-0 flex items-center justify-center">
                         {sub.textbook_cover_url ? (
                           <img
                             src={sub.textbook_cover_url}
@@ -206,31 +207,31 @@ export function AssignSubjectModal() {
                       </div>
 
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/10 text-slate-300 font-mono">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-mono">
                             {sub.code}
                           </span>
-                          <span className="text-xs font-bold text-white truncate">
+                          <span className="text-xs font-bold text-white truncate font-display">
                             {sub.name}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 truncate">
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
                           {sub.script_type === "URDU_NASTALIQ"
-                            ? "Urdu Nastaliq"
+                            ? "اردو نستعلیق (Urdu)"
                             : sub.script_type === "ARABIC"
-                            ? "Arabic Script"
-                            : "Latin Script"}
+                            ? "عربي / قرآن (Arabic)"
+                            : "Latin (English)"}
                         </p>
                       </div>
                     </div>
 
                     <div className="shrink-0">
                       {isAlreadyMapped ? (
-                        <span className="text-[10px] font-bold text-slate-500 font-display uppercase">
+                        <span className="text-[10px] font-bold text-slate-500 font-mono uppercase">
                           Mapped
                         </span>
                       ) : isSelected ? (
-                        <div className="h-5 w-5 rounded-full bg-cyan-400 text-black flex items-center justify-center">
+                        <div className="h-5 w-5 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-sm">
                           <Check className="w-3 h-3 stroke-[3]" />
                         </div>
                       ) : (
@@ -241,37 +242,37 @@ export function AssignSubjectModal() {
                 );
               })
             ) : (
-              <div className="p-6 text-center rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                <p className="text-xs text-slate-400">No matching subjects found.</p>
+              <div className="p-6 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <p className="text-xs text-slate-400">No matching master subjects found.</p>
                 <button
                   type="button"
                   onClick={() => {
                     closeAssignSubject();
                     openCreateSubject();
                   }}
-                  className="mt-2 text-xs font-bold text-cyan-400 hover:underline"
+                  className="mt-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
                 >
-                  + Create Master Subject
+                  + Create Master Subject Now
                 </button>
               </div>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+          {/* ── Modal Footer Actions ────────────────────────────────── */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={closeAssignSubject}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              disabled={!selectedSubjectId || isSubmitting}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-pgc-red to-[#c92f1f] hover:from-[#f04836] hover:to-pgc-red text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/20 transition-all cursor-pointer disabled:opacity-50"
+              disabled={isSubmitting || !selectedSubjectId}
+              className="px-6 py-2.5 rounded-xl bg-pgc-red hover:bg-[#c92f1f] text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/25 hover:shadow-pgc-red/40 transition-all cursor-pointer disabled:opacity-50 hover:scale-[1.01]"
             >
               {isSubmitting ? (
                 <>
@@ -279,7 +280,7 @@ export function AssignSubjectModal() {
                   <span>Assigning...</span>
                 </>
               ) : (
-                <span>Assign Subject</span>
+                <span>Assign to Lane</span>
               )}
             </button>
           </div>

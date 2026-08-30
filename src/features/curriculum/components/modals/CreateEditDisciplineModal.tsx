@@ -103,20 +103,21 @@ export function CreateEditDisciplineModal() {
 
   return (
     <Dialog open={isCreateDisciplineOpen} onOpenChange={(open) => !open && closeCreateDiscipline()}>
-      <DialogContent className="max-w-md p-6 bg-[#0B0C16]/95 border-white/15 text-white backdrop-blur-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-xl w-[95vw] p-6 sm:p-7 bg-[#0e111d] border border-white/[0.08] text-white backdrop-blur-2xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+        {/* ── Dialog Header ───────────────────────────────────────── */}
+        <DialogHeader className="border-b border-white/[0.06] pb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shadow-lg shadow-amber-500/10">
               <Layers className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold font-display tracking-tight text-white">
-                {isEditing ? "Edit Academic Discipline" : "Create Academic Discipline"}
+                {isEditing ? "Edit Discipline" : "Create Discipline"}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400">
                 {isEditing
-                  ? "Modify discipline parameters and track info."
-                  : "Define a major academic stream (e.g. ICS, FSc Pre-Med, I.Com)."}
+                  ? "Update discipline name, code, and active status."
+                  : "Add an academic discipline (e.g., ICS, FSc Pre-Medical, I.Com)."}
               </DialogDescription>
             </div>
           </div>
@@ -129,10 +130,11 @@ export function CreateEditDisciplineModal() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          {/* ── Discipline Name & Code ──────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
+              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 font-display">
                 Discipline Name <span className="text-pgc-red">*</span>
               </label>
               <Input
@@ -140,62 +142,79 @@ export function CreateEditDisciplineModal() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. ICS (Computer Science)"
                 required
-                className="bg-black/50 border-white/15 text-white placeholder-slate-500 text-xs focus:border-amber-400"
+                className="bg-black/40 border-white/10 hover:border-white/20 text-white placeholder-slate-500 text-xs rounded-xl px-3.5 py-2.5 focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20 transition-all font-sans"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
+              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 font-display">
                 Code <span className="text-pgc-red">*</span>
               </label>
               <Input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="ICS-PHY"
+                placeholder="ICS"
                 required
-                className="bg-black/50 border-white/15 text-white placeholder-slate-500 text-xs font-mono uppercase focus:border-amber-400"
+                className="bg-black/40 border-white/10 hover:border-white/20 text-white placeholder-slate-500 text-xs font-mono font-bold uppercase rounded-xl px-3.5 py-2.5 focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20 transition-all"
               />
             </div>
           </div>
 
+          {/* ── Description / Specialization Note ───────────────────── */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-display">
-              Description / Specialization Note
+            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 font-display">
+              Description / Notes
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Intermediate with Mathematics and Physics emphasis."
+              placeholder="e.g. Intermediate stream with Mathematics and Computer Science emphasis."
               rows={2}
-              className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-amber-400 resize-none font-sans"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 hover:border-white/20 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20 resize-none font-sans leading-relaxed transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-white/10">
-            <div>
-              <p className="text-xs font-bold text-white font-display">Active Discipline</p>
+          {/* ── Active Status Card (Professional & Minimal) ─────────── */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-white font-display">Status</span>
+                <span
+                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${
+                    isActive
+                      ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                      : "bg-white/5 text-slate-400 border-white/10"
+                  }`}
+                >
+                  {isActive ? "ACTIVE" : "INACTIVE"}
+                </span>
+              </div>
               <p className="text-[11px] text-slate-400">
-                Visible for subject mapping and match creation.
+                Available to map across boards and arena matches.
               </p>
             </div>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
 
-          <CloudinaryUploadZone
-            label="Discipline Badge / Emblem"
-            variant="avatar"
-            value={logoUrl}
-            onUpload={setLogoUrl}
-            onRemove={() => setLogoUrl(null)}
-            folder="disciplines/emblems"
-          />
+          {/* ── Discipline Badge / Emblem ───────────────────────────── */}
+          <div className="space-y-1.5 pt-1">
+            <CloudinaryUploadZone
+              label="Discipline Icon / Emblem"
+              variant="avatar"
+              value={logoUrl}
+              onUpload={setLogoUrl}
+              onRemove={() => setLogoUrl(null)}
+              folder="disciplines/emblems"
+            />
+          </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+          {/* ── Modal Footer Actions ────────────────────────────────── */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={closeCreateDiscipline}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -203,7 +222,7 @@ export function CreateEditDisciplineModal() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-pgc-red to-[#c92f1f] hover:from-[#f04836] hover:to-pgc-red text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/20 transition-all cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-pgc-red hover:bg-[#c92f1f] text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/25 hover:shadow-pgc-red/40 transition-all cursor-pointer disabled:opacity-50 hover:scale-[1.01]"
             >
               {isSubmitting ? (
                 <>

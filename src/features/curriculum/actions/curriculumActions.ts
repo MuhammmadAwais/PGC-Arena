@@ -151,22 +151,24 @@ export async function getCurriculumData(classLevel: ClassLevel = 11): Promise<Cu
       };
     });
 
-    // 5. Structure Hierarchical Board Containers
+    // 5. Structure Hierarchical Board Containers (Independent per board)
     let totalQuestions = 0;
     const boardContainers: BoardWithDisciplines[] = boards.map((board) => {
-      const boardDisciplines = disciplines.map((disc) => {
-        const discNodes = nodes.filter(
-          (node) => node.board_id === board.id && node.discipline_id === disc.id
-        );
-        discNodes.forEach((node) => {
-          totalQuestions += node.question_count;
-        });
+      const boardDisciplines = disciplines
+        .map((disc) => {
+          const discNodes = nodes.filter(
+            (node) => node.board_id === board.id && node.discipline_id === disc.id
+          );
+          discNodes.forEach((node) => {
+            totalQuestions += node.question_count;
+          });
 
-        return {
-          ...disc,
-          nodes: discNodes,
-        };
-      });
+          return {
+            ...disc,
+            nodes: discNodes,
+          };
+        })
+        .filter((disc) => disc.nodes.length > 0);
 
       return {
         ...board,
