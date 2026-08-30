@@ -747,7 +747,7 @@ export async function getSingleCampusData(campusId: string) {
         ...team,
         members: squadPlayers.map((m) => ({
           ...m,
-          email: `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          email: `${(m.roll_number || m.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
           is_team_leader: team.leader_id === m.id,
         })),
         member_count: squadPlayers.length,
@@ -760,7 +760,7 @@ export async function getSingleCampusData(campusId: string) {
       const teamObj = teams.find((t) => t.id === s.team_id);
       studentMap.set(s.id, {
         ...s,
-        email: `${s.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        email: `${(s.roll_number || s.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         team_name: teamObj?.name || undefined,
         is_team_leader: s.team_id && teamIdSet.has(s.team_id)
           ? teamObj?.leader_id === s.id
@@ -773,13 +773,13 @@ export async function getSingleCampusData(campusId: string) {
     const enrichedManager = manager
       ? {
           ...manager,
-          email: `${manager.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          email: `${(manager.roll_number || manager.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         }
       : null;
 
     const enrichedTeachers = teachers.map((t) => ({
       ...t,
-      email: `${t.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      email: `${(t.roll_number || t.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
     }));
 
     return {
@@ -839,7 +839,7 @@ export async function getSingleTeamData(teamId: string) {
 
     const enrichedMembers = (membersRes.data || []).map((m) => ({
       ...m,
-      email: `${m.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+      email: `${(m.roll_number || m.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
       is_team_leader: team.leader_id === m.id,
       academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
     }));
@@ -847,7 +847,7 @@ export async function getSingleTeamData(teamId: string) {
     const enrichedLeader = leaderRes.data
       ? {
           ...leaderRes.data,
-          email: `${leaderRes.data.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+          email: `${(leaderRes.data.roll_number || leaderRes.data.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
           is_team_leader: true,
           academic_program: "Faculty of Sciences (FSc Pre-Engineering)",
         }
@@ -927,7 +927,7 @@ export async function getSingleUserData(userId: string) {
     return {
       user: {
         ...user,
-        email: `${user.roll_number.toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
+        email: `${(user.roll_number || user.id.slice(0, 8)).toLowerCase().replace(/[^a-z0-9]/g, "")}@pgc.edu`,
         is_team_leader: isLeader,
         elo_rating: eloRating,
       },

@@ -150,9 +150,13 @@ export default function CurriculumAdminPage() {
       {isLoading && !isLoaded ? (
         <CurriculumSkeleton />
       ) : filteredBoardContainers.length > 0 ? (
-        <div className="space-y-8">
-          {filteredBoardContainers.map((board) => (
-            <BoardCard key={board.id} board={board} />
+        <div className="space-y-4">
+          {filteredBoardContainers.map((board, idx) => (
+            <BoardCard
+              key={board.id}
+              board={board}
+              defaultExpanded={idx === 0}
+            />
           ))}
         </div>
       ) : searchQuery ? (

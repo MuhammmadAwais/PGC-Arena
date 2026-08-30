@@ -125,7 +125,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <p className="mt-5 text-center text-xs text-white/25 tracking-wide">
+          <p suppressHydrationWarning className="mt-5 text-center text-xs text-white/25 tracking-wide">
             © {new Date().getFullYear()} Punjab Group of Colleges
           </p>
         </div>

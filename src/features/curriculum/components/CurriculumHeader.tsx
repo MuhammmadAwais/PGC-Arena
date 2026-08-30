@@ -75,7 +75,7 @@ export function CurriculumHeader() {
             className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all cursor-pointer hover:border-white/30"
           >
             <BookMarked className="w-3.5 h-3.5 text-cyan-400" />
-            <span>+ Master Subject</span>
+            <span>Master Subject</span>
           </button>
 
           <button
@@ -84,7 +84,7 @@ export function CurriculumHeader() {
             className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all cursor-pointer hover:border-white/30"
           >
             <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ New Discipline</span>
+            <span>Add Discipline</span>
           </button>
 
           <button
@@ -93,7 +93,7 @@ export function CurriculumHeader() {
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-pgc-red to-[#c92f1f] hover:from-[#f04836] hover:to-pgc-red text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            <span>+ New Board</span>
+            <span>Create Board</span>
           </button>
         </div>
       </div>

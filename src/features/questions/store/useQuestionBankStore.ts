@@ -64,7 +64,6 @@ interface QuestionBankStoreState {
   isCreateEditMcqOpen: boolean;
   editMcqData: Question | null;
 
-  hudPreviewQuestion: Question | null;
   deleteModalData: DeleteQuestionModalState;
 
   // ── Actions ─────────────────────────────────────────────────
@@ -76,6 +75,7 @@ interface QuestionBankStoreState {
   setCognitiveFilter: (cognitiveType: "ALL" | CognitiveType) => void;
   setScriptFilter: (script: "ALL" | ScriptType) => void;
   setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
   setViewMode: (mode: "cards" | "compact-table") => void;
 
   // Batch Selection
@@ -102,9 +102,6 @@ interface QuestionBankStoreState {
   closeCreateMcq: () => void;
   openEditMcq: (question: Question) => void;
   closeEditMcq: () => void;
-
-  openHudPreview: (question: Question) => void;
-  closeHudPreview: () => void;
 
   openDeleteModal: (
     entityType: DeletableQuestionEntity,
@@ -151,7 +148,6 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
   isCreateEditMcqOpen: false,
   editMcqData: null,
 
-  hudPreviewQuestion: null,
   deleteModalData: {
     isOpen: false,
     entityType: "question",
@@ -213,6 +209,11 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
 
   setPage: (page: number) => {
     set({ pagination: { ...get().pagination, page } });
+    get().fetchQuestions();
+  },
+
+  setPageSize: (pageSize: number) => {
+    set({ pagination: { ...get().pagination, pageSize, page: 1 } });
     get().fetchQuestions();
   },
 
@@ -333,9 +334,6 @@ export const useQuestionBankStore = create<QuestionBankStoreState>((set, get) =>
   openEditMcq: (question: Question) =>
     set({ isCreateEditMcqOpen: true, editMcqData: question }),
   closeEditMcq: () => set({ isCreateEditMcqOpen: false, editMcqData: null }),
-
-  openHudPreview: (question: Question) => set({ hudPreviewQuestion: question }),
-  closeHudPreview: () => set({ hudPreviewQuestion: null }),
 
   openDeleteModal: (entityType, entityId, entityName) =>
     set({

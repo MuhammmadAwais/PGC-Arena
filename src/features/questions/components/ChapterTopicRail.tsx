@@ -42,19 +42,19 @@ export function ChapterTopicRail() {
   // ── LEVEL 2: TOPICS RAIL ─────────────────────────────────────────
   if (activeChapterId && activeChapter) {
     return (
-      <aside className="w-full lg:w-72 shrink-0 rounded-3xl bg-[#0B0C16]/80 border border-white/10 backdrop-blur-md p-4 space-y-4 shadow-xl animate-in slide-in-from-left-4 duration-200">
+      <aside className="w-full lg:w-72 shrink-0 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md p-4 space-y-3 shadow-sm animate-in slide-in-from-left-4 duration-200">
         {/* Top: Back to Chapters Navigation */}
         <button
           type="button"
           onClick={() => setActiveChapter(null)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-xs font-bold text-cyan-300 hover:text-white transition-all cursor-pointer border border-white/10 group"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer border border-white/10 group"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>← Back to Chapters</span>
         </button>
 
         {/* Active Chapter Header Banner */}
-        <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1">
+        <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 font-display">
               Chapter {activeChapter.chapter_number}
@@ -76,8 +76,8 @@ export function ChapterTopicRail() {
             onClick={() => setActiveTopic(null)}
             className={`w-full p-2.5 rounded-xl border flex items-center justify-between gap-2 text-left transition-all cursor-pointer ${
               activeTopicId === null
-                ? "bg-cyan-500/20 border-cyan-400 text-white shadow-md shadow-cyan-500/10"
-                : "bg-black/30 border-white/10 hover:bg-white/[0.05] text-slate-300"
+                ? "bg-cyan-500/[0.08] border-cyan-400/40 text-white shadow-sm"
+                : "bg-black/30 border-white/[0.08] hover:bg-white/[0.04] text-slate-300"
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
@@ -98,8 +98,8 @@ export function ChapterTopicRail() {
                 key={topic.id}
                 className={`group relative flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-pgc-red/20 border-pgc-red/50 text-white shadow-md shadow-pgc-red/10"
-                    : "bg-black/30 border-white/[0.08] hover:bg-white/[0.05] hover:border-white/20 text-slate-300"
+                    ? "bg-cyan-500/[0.08] border-cyan-400/40 text-white shadow-sm"
+                    : "bg-black/30 border-white/[0.08] hover:bg-white/[0.04] hover:border-white/[0.14] text-slate-300"
                 }`}
                 onClick={() => setActiveTopic(topic.id)}
               >
@@ -166,7 +166,7 @@ export function ChapterTopicRail() {
           className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-cyan-400 bg-white/[0.02] hover:bg-cyan-500/10 text-xs font-bold text-slate-300 hover:text-cyan-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer font-display uppercase tracking-wider"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>+ Add Topic</span>
+          <span>Add Topic</span>
         </button>
       </aside>
     );
@@ -174,7 +174,7 @@ export function ChapterTopicRail() {
 
   // ── LEVEL 1: CHAPTERS RAIL ───────────────────────────────────────
   return (
-    <aside className="w-full lg:w-72 shrink-0 rounded-3xl bg-[#0B0C16]/80 border border-white/10 backdrop-blur-md p-4 space-y-4 shadow-xl">
+    <aside className="w-full lg:w-72 shrink-0 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md p-4 space-y-3 shadow-sm">
       {/* Rail Title Header */}
       <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
         <div className="flex items-center gap-2">
@@ -194,12 +194,12 @@ export function ChapterTopicRail() {
         onClick={() => setActiveChapter(null)}
         className={`w-full p-2.5 rounded-xl border flex items-center justify-between gap-2 text-left transition-all cursor-pointer ${
           activeChapterId === null
-            ? "bg-pgc-red/20 border-pgc-red/50 text-white shadow-md shadow-pgc-red/10"
-            : "bg-black/30 border-white/10 hover:bg-white/[0.05] text-slate-300"
+            ? "bg-cyan-500/[0.08] border-cyan-400/40 text-white shadow-sm"
+            : "bg-black/30 border-white/[0.08] hover:bg-white/[0.04] text-slate-300"
         }`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <BookOpen className="w-3.5 h-3.5 text-pgc-red shrink-0" />
+          <BookOpen className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span className="text-xs font-bold truncate">All Subject Chapters</span>
         </div>
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 font-display">
@@ -214,10 +214,10 @@ export function ChapterTopicRail() {
             <div
               key={chapter.id}
               onClick={() => setActiveChapter(chapter.id)}
-              className="group relative flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/30 border border-white/[0.08] hover:bg-white/[0.05] hover:border-white/20 text-slate-300 transition-all cursor-pointer"
+              className="group relative flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/30 border border-white/[0.08] hover:bg-white/[0.04] hover:border-white/[0.14] text-slate-300 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-display shrink-0">
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/20 font-display shrink-0">
                   Ch {chapter.chapter_number}
                 </span>
                 <span className="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors">
@@ -282,10 +282,10 @@ export function ChapterTopicRail() {
       <button
         type="button"
         onClick={openCreateChapter}
-        className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-pgc-red bg-white/[0.02] hover:bg-pgc-red/10 text-xs font-bold text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer font-display uppercase tracking-wider"
+        className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-cyan-400 bg-white/[0.02] hover:bg-cyan-500/10 text-xs font-bold text-slate-300 hover:text-cyan-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer font-display uppercase tracking-wider"
       >
         <Plus className="w-3.5 h-3.5" />
-        <span>+ Add Chapter</span>
+        <span>Add Chapter</span>
       </button>
     </aside>
   );

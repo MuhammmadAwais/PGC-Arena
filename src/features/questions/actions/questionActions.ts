@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireSuperAdmin, requireAuth } from "@/lib/supabase/rbac";
 import {
   createChapterSchema,
@@ -58,12 +59,10 @@ export async function getCurriculumNodeHubListAction(params?: {
   }
 
   try {
-    const supabase = await createClient();
-
     // 1. Fetch Boards & Disciplines for filter bar
     const [{ data: boardsData }, { data: disciplinesData }] = await Promise.all([
-      supabase.from("boards").select("*").eq("is_active", true).order("name"),
-      supabase.from("disciplines").select("*").eq("is_active", true).order("name"),
+      supabaseAdmin.from("boards").select("*").eq("is_active", true).order("name"),
+      supabaseAdmin.from("disciplines").select("*").eq("is_active", true).order("name"),
     ]);
 
     const boards: Board[] = (boardsData || []).map((b) => ({
@@ -87,7 +86,7 @@ export async function getCurriculumNodeHubListAction(params?: {
     }));
 
     // 2. Query Curriculum Nodes with relations
-    let query = supabase
+    let query = supabaseAdmin
       .from("curriculum_nodes")
       .select(`
         id,
@@ -112,7 +111,7 @@ export async function getCurriculumNodeHubListAction(params?: {
     if (nodeError) throw nodeError;
 
     // 3. Aggregate Question & Chapter counts per node
-    const { data: chaptersData, error: chapError } = await supabase
+    const { data: chaptersData, error: chapError } = await supabaseAdmin
       .from("chapters")
       .select(`
         id,
@@ -216,8 +215,9 @@ export async function getSubjectVaultData(
   try {
     const supabase = await createClient();
 
-    // 1. Fetch Curriculum Node with Board, Discipline, Subject
-    const { data: nodeRaw, error: nodeError } = await supabase
+    // 1. Fetch Curriculum Node with Board, Discipline, Subject (with fallback by subject_id)
+    let nodeRaw: any = null;
+    const { data: directNode } = await supabaseAdmin
       .from("curriculum_nodes")
       .select(`
         id,
@@ -229,7 +229,28 @@ export async function getSubjectVaultData(
       .eq("id", curriculumNodeId)
       .maybeSingle();
 
-    if (nodeError) throw nodeError;
+    if (directNode) {
+      nodeRaw = directNode;
+    } else {
+      // Fallback: check by subject_id
+      const { data: fallbackNode } = await supabaseAdmin
+        .from("curriculum_nodes")
+        .select(`
+          id,
+          class_level,
+          board:boards (id, name, code, logo_url, banner_url, is_active, created_at),
+          discipline:disciplines (id, name, code, description, logo_url, is_active, created_at),
+          subject:subjects (id, name, code, script_type, textbook_cover_url, description, is_active, created_at)
+        `)
+        .eq("subject_id", curriculumNodeId)
+        .limit(1)
+        .maybeSingle();
+
+      if (fallbackNode) {
+        nodeRaw = fallbackNode;
+      }
+    }
+
     if (!nodeRaw) {
       return {
         success: false,
@@ -244,6 +265,7 @@ export async function getSubjectVaultData(
       };
     }
 
+    const actualNodeId = nodeRaw.id;
     const board = nodeRaw.board as unknown as Board;
     const discipline = nodeRaw.discipline as unknown as Discipline;
     const rawSub: any = nodeRaw.subject;
@@ -259,11 +281,11 @@ export async function getSubjectVaultData(
     };
     const classLevel = nodeRaw.class_level as ClassLevel;
 
-    // 2. Fetch Chapters scoped strictly to this curriculum_node_id
-    const { data: chaptersRaw, error: chapError } = await supabase
+    // 2. Fetch Chapters scoped strictly to this actualNodeId (or subject_id)
+    const { data: chaptersRaw, error: chapError } = await supabaseAdmin
       .from("chapters")
       .select("*")
-      .eq("curriculum_node_id", curriculumNodeId)
+      .or(`curriculum_node_id.eq.${actualNodeId},subject_id.eq.${subject.id}`)
       .order("chapter_number", { ascending: true });
 
     if (chapError) throw chapError;
@@ -273,7 +295,7 @@ export async function getSubjectVaultData(
     // 3. Fetch Topics for these chapters
     let topicsRaw: any[] = [];
     if (chapterIds.length > 0) {
-      const { data: tData, error: topicError } = await supabase
+      const { data: tData, error: topicError } = await supabaseAdmin
         .from("topics")
         .select("*")
         .in("chapter_id", chapterIds)
@@ -288,7 +310,7 @@ export async function getSubjectVaultData(
     // 4. Fetch Question Counts & Difficulty distribution
     let questionsRaw: any[] = [];
     if (topicIds.length > 0) {
-      const { data: qData, error: qError } = await supabase
+      const { data: qData, error: qError } = await supabaseAdmin
         .from("questions")
         .select("id, topic_id, difficulty")
         .in("topic_id", topicIds);
@@ -408,29 +430,57 @@ export async function getVaultQuestionsAction(params: {
   } = params;
 
   try {
-    const supabase = await createClient();
-
     // 1. Resolve Target Topic IDs
     let targetTopicIds: string[] = [];
 
     if (topicId) {
       targetTopicIds = [topicId];
     } else if (chapterId) {
-      const { data: topicsData } = await supabase
+      const { data: topicsData } = await supabaseAdmin
         .from("topics")
         .select("id")
         .eq("chapter_id", chapterId);
       targetTopicIds = (topicsData || []).map((t) => t.id);
     } else {
-      // All chapters for this curriculum_node_id
-      const { data: chapsData } = await supabase
+      // Find actual node and its subject ID
+      let actualNodeId = curriculumNodeId;
+      let subjectId: string | null = null;
+
+      const { data: nodeData } = await supabaseAdmin
+        .from("curriculum_nodes")
+        .select("id, subject_id")
+        .eq("id", curriculumNodeId)
+        .maybeSingle();
+
+      if (nodeData) {
+        actualNodeId = nodeData.id;
+        subjectId = nodeData.subject_id;
+      } else {
+        const { data: fallbackNode } = await supabaseAdmin
+          .from("curriculum_nodes")
+          .select("id, subject_id")
+          .eq("subject_id", curriculumNodeId)
+          .limit(1)
+          .maybeSingle();
+        if (fallbackNode) {
+          actualNodeId = fallbackNode.id;
+          subjectId = fallbackNode.subject_id;
+        }
+      }
+
+      let orFilter = `curriculum_node_id.eq.${actualNodeId}`;
+      if (subjectId) {
+        orFilter += `,subject_id.eq.${subjectId}`;
+      }
+
+      const { data: chapsData } = await supabaseAdmin
         .from("chapters")
         .select("id")
-        .eq("curriculum_node_id", curriculumNodeId);
+        .or(orFilter);
 
       const chapIds = (chapsData || []).map((c) => c.id);
       if (chapIds.length > 0) {
-        const { data: topicsData } = await supabase
+        const { data: topicsData } = await supabaseAdmin
           .from("topics")
           .select("id")
           .in("chapter_id", chapIds);
@@ -450,7 +500,7 @@ export async function getVaultQuestionsAction(params: {
     }
 
     // 2. Build Query
-    let query = supabase
+    let query = supabaseAdmin
       .from("questions")
       .select(
         `
@@ -466,12 +516,12 @@ export async function getVaultQuestionsAction(params: {
         explanation,
         is_active,
         created_at,
-        topics:topic_id (
+        topic:topics (
           id,
           topic_number,
           title,
           chapter_id,
-          chapters:chapter_id (
+          chapter:chapters (
             id,
             chapter_number,
             title
@@ -535,19 +585,19 @@ export async function getVaultQuestionsAction(params: {
         explanation: q.explanation,
         is_active: q.is_active,
         created_at: q.created_at,
-        topic: q.topics
+        topic: q.topic
           ? {
-              id: q.topics.id,
-              topic_number: q.topics.topic_number,
-              title: q.topics.title,
-              chapter_id: q.topics.chapter_id,
+              id: q.topic.id,
+              topic_number: q.topic.topic_number,
+              title: q.topic.title,
+              chapter_id: q.topic.chapter_id,
             }
           : undefined,
-        chapter: q.topics?.chapters
+        chapter: q.topic?.chapter
           ? {
-              id: q.topics.chapters.id,
-              chapter_number: q.topics.chapters.chapter_number,
-              title: q.topics.chapters.title,
+              id: q.topic.chapter.id,
+              chapter_number: q.topic.chapter.chapter_number,
+              title: q.topic.chapter.title,
             }
           : undefined,
       };

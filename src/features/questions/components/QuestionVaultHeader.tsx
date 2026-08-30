@@ -70,7 +70,7 @@ export function QuestionVaultHeader() {
           href="/admin/curriculum"
           className="hover:text-white transition-colors flex items-center gap-1.5"
         >
-          <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+          <BookOpen className="w-3.5 h-3.5 text-white/70" />
           <span>Curriculum</span>
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
@@ -93,7 +93,7 @@ export function QuestionVaultHeader() {
           </>
         )}
         <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-        <span className="text-cyan-400 font-mono">Class {classLevel}</span>
+        <span className="text-slate-300 font-mono">Class {classLevel}</span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
         <span className="text-pgc-red font-display uppercase tracking-wider font-bold">
           {subject ? subject.name : "Subject Vault"}
@@ -101,7 +101,7 @@ export function QuestionVaultHeader() {
       </nav>
 
       {/* ── 2. Subject Metadata Banner & Global Actions ───────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-[#0B0C16]/80 border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md shadow-sm relative overflow-hidden">
         <div className="flex items-center gap-4 min-w-0">
           {/* Subject Cover / Thumbnail */}
           <div className="h-16 w-14 rounded-2xl overflow-hidden bg-black/50 border border-white/15 shrink-0 relative flex items-center justify-center shadow-lg">
@@ -122,25 +122,25 @@ export function QuestionVaultHeader() {
                 {subject?.name || "Subject Question Vault"}
               </h1>
               {board && (
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-display">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white/[0.06] text-white border border-white/10">
                   {board.code}
                 </span>
               )}
               {discipline && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-mono">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white/[0.06] text-slate-300 border border-white/10">
                   {discipline.code}
                 </span>
               )}
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-pgc-red/20 text-white border border-pgc-red/40 font-display">
+              <span className="text-[10px] font-display font-extrabold px-2.5 py-0.5 rounded-md bg-pgc-red/15 text-pgc-red border border-pgc-red/30 uppercase tracking-wide">
                 Class {classLevel}
               </span>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border ${
                   subject?.script_type === "URDU_NASTALIQ"
                     ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-urdu-sans"
                     : subject?.script_type === "ARABIC"
                     ? "bg-amber-500/15 text-amber-300 border-amber-500/30 font-arabic"
-                    : "bg-blue-500/15 text-blue-300 border-blue-500/30"
+                    : "bg-white/[0.06] text-slate-300 border-white/10 font-display"
                 }`}
               >
                 {subject?.script_type === "URDU_NASTALIQ"
@@ -173,26 +173,26 @@ export function QuestionVaultHeader() {
           <button
             type="button"
             onClick={handleLaunchStudio}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold font-display uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-amber-500/10 transition-all cursor-pointer hover:scale-[1.02]"
+            className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold font-display uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-[1.02]"
             title="Launch Question Studio AI Generator"
           >
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-            <span>⚡ AI Studio</span>
+            <span>AI Studio</span>
           </button>
 
           <button
             type="button"
             onClick={openCreateMcq}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-pgc-red to-[#c92f1f] hover:from-[#f04836] hover:to-pgc-red text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-pgc-red/20 transition-all cursor-pointer hover:scale-[1.02]"
+            className="px-4 py-2 rounded-xl bg-pgc-red hover:bg-[#c92f1f] text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-md shadow-pgc-red/20 transition-all cursor-pointer hover:scale-[1.02]"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add MCQ</span>
+            <span>Add MCQ</span>
           </button>
         </div>
       </div>
 
       {/* ── 3. Search & Multi-Filter Control Strip ─────────────────── */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0B0C16]/80 border border-white/10 backdrop-blur-md shadow-lg">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-2.5 rounded-2xl bg-white/[0.02] border border-white/[0.08] backdrop-blur-md shadow-sm">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -201,7 +201,7 @@ export function QuestionVaultHeader() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search questions by prompt or option text..."
-            className="w-full pl-10 pr-9 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pgc-red/50 font-sans"
+            className="w-full pl-10 pr-9 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/25 font-sans"
           />
           {searchQuery && (
             <button
@@ -251,7 +251,7 @@ export function QuestionVaultHeader() {
                 onClick={() => setCognitiveFilter(c)}
                 className={`px-2 py-1 rounded-lg font-bold font-display uppercase tracking-wider transition-all cursor-pointer ${
                   filters.cognitiveType === c
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                    ? "bg-pgc-red/20 text-white border border-pgc-red/50 shadow-sm"
                     : "text-slate-400 hover:text-white"
                 }`}
               >

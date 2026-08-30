@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database.types";
 
 export type UserRole = Database["public"]["Enums"]["user_role"];
@@ -47,8 +48,8 @@ export async function requireAuth(
       };
     }
 
-    // 2. Cross-reference role from public.users table
-    const { data: profile, error: profileError } = await supabase
+    // 2. Cross-reference role from public.users table via supabaseAdmin for 100% reliability
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("users")
       .select("id, role, campus_id, team_id, full_name")
       .eq("id", user.id)

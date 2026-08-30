@@ -18,14 +18,6 @@ const CreateEditMcqModal = dynamic(
   { ssr: false }
 );
 
-const ArenaHudPreviewModal = dynamic(
-  () =>
-    import("@/features/questions/components/modals/ArenaHudPreviewModal").then(
-      (m) => m.ArenaHudPreviewModal
-    ),
-  { ssr: false }
-);
-
 const CreateEditChapterModal = dynamic(
   () =>
     import(
@@ -95,7 +87,6 @@ export default function SubjectQuestionVaultPage() {
 
       {/* ── Dynamic Modals ─────────────────────────────────────────── */}
       <CreateEditMcqModal />
-      <ArenaHudPreviewModal />
       <CreateEditChapterModal />
       <CreateEditTopicModal />
       <DeleteQuestionModal />
