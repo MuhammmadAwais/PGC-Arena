@@ -20,6 +20,7 @@ export const generatedMcqSchema = z.object({
 export const generatedMcqsArraySchema = z.array(generatedMcqSchema);
 
 export const generateApiRequestSchema = z.object({
+  model: z.string().nullable().optional(),
   pdfUrl: z.string().nullable().optional(),
   pdfBase64: z.string().nullable().optional(),
   startPage: z.number().int().min(1).nullable().optional(),
@@ -33,6 +34,7 @@ export const generateApiRequestSchema = z.object({
       boardName: z.string().nullable().optional(),
       classLevel: z.number().nullable().optional(),
       subjectName: z.string().nullable().optional(),
+      subjectCode: z.string().nullable().optional(),
       chapterTitle: z.string().nullable().optional(),
       topicTitle: z.string().nullable().optional(),
       scriptType: z.enum(["LATIN", "URDU_NASTALIQ", "ARABIC"]).nullable().optional(),

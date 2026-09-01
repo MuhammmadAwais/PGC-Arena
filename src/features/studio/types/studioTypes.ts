@@ -34,6 +34,7 @@ export interface StudioContext {
   classLevel: number;
   subjectId: string | null;
   subjectName: string | null;
+  subjectCode: string | null;
   subjectScript: ScriptType;
   chapterId: string | null;
   chapterNumber: number | null;

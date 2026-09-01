@@ -34,7 +34,7 @@ export function StudioStickyFooter() {
 
   const handleCommit = async () => {
     if (approved.length === 0) {
-      setError("Please approve at least 1 question before committing to vault.");
+      setError("Please approve at least 1 question before saving.");
       return;
     }
 
@@ -51,10 +51,10 @@ export function StudioStickyFooter() {
     try {
       const res = await commitApprovedQuestionsAction(context.topicId, stagedQuestions);
       if (!res.success) {
-        throw new Error(res.error || "Failed to commit approved questions.");
+        throw new Error(res.error || "Failed to save approved questions.");
       }
 
-      // Clear local session after successful commit
+      // Clear local session after successful save
       clearSession();
 
       // Redirect back to the subject vault
@@ -64,20 +64,20 @@ export function StudioStickyFooter() {
         router.push("/admin/question-bank");
       }
     } catch (err: any) {
-      console.error("Commit failed:", err);
-      setError(err.message || "Failed to commit questions to database vault.");
+      console.error("Save failed:", err);
+      setError(err.message || "Failed to save questions to question bank.");
     } finally {
       setIsCommitting(false);
     }
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-[#0B0C16]/95 border border-amber-500/30 backdrop-blur-2xl p-3.5 sm:p-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col sm:flex-row items-center justify-between gap-3 text-white font-sans animate-in slide-in-from-bottom-6 duration-300">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-[#0B0C16]/95 border border-white/15 hover:border-emerald-500/40 backdrop-blur-2xl p-3.5 sm:p-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col sm:flex-row items-center justify-between gap-3 text-white font-sans animate-in slide-in-from-bottom-6 duration-300">
       {/* ── Summary Counters ───────────────────────────────────────── */}
       <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
         <div className="flex items-center gap-1.5 text-xs font-semibold">
-          <Inbox className="w-4 h-4 text-cyan-400" />
-          <span className="text-slate-400">Inbox:</span>
+          <Inbox className="w-4 h-4 text-amber-400" />
+          <span className="text-slate-400">Pending:</span>
           <span className="font-mono font-bold text-white">{inbox.length}</span>
         </div>
 
@@ -98,12 +98,12 @@ export function StudioStickyFooter() {
         </div>
       </div>
 
-      {/* ── Commit / Clear Actions ─────────────────────────────────── */}
+      {/* ── Save / Clear Actions ─────────────────────────────────── */}
       <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
         <button
           type="button"
           onClick={() => {
-            if (confirm("Are you sure you want to discard all staged questions in this session?")) {
+            if (confirm("Are you sure you want to discard all questions in this session?")) {
               clearSession();
             }
           }}
@@ -111,24 +111,24 @@ export function StudioStickyFooter() {
           className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Clear Staging</span>
+          <span>Clear All</span>
         </button>
 
         <button
           type="button"
           onClick={handleCommit}
           disabled={isCommitting || approved.length === 0}
-          className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:hover:bg-emerald-500 text-black text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer hover:scale-[1.02]"
+          className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
         >
           {isCommitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Committing {approved.length} MCQs...</span>
+              <span>Saving {approved.length} Questions...</span>
             </>
           ) : (
             <>
-              <Rocket className="w-4 h-4 fill-black" />
-              <span>Commit {approved.length} Approved to Vault</span>
+              <Rocket className="w-4 h-4" />
+              <span>Save {approved.length} Approved Questions</span>
             </>
           )}
         </button>

@@ -37,16 +37,16 @@ export function LibraryHeader({
             <span className="text-cyan-400">Vault</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Enterprise textbook repository hosted on Backblaze B2 storage with multi-syllabus curriculum mapping.
+            Upload and manage textbooks and assign them directly to your curriculum subjects.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/admin/ai-creation"
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer hover:scale-[1.02]"
+            className="px-4 py-2.5 rounded-xl bg-pgc-red hover:bg-[#d62839] text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 border border-red-500/30 transition-all cursor-pointer hover:scale-[1.02]"
           >
-            <Zap className="w-4 h-4 fill-black" />
+            <Sparkles className="w-4 h-4 text-white" />
             <span>Open AI Question Studio</span>
           </Link>
         </div>

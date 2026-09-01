@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useStudioStore } from "../store/useStudioStore";
 import { getCurriculumMetadataAction } from "@/features/library/actions/libraryActions";
 import {
@@ -248,12 +249,12 @@ export function DestinationTopicModal({
   const handleConfirmCommit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (approvedQuestions.length === 0) {
-      setLocalError("Please approve at least 1 question before committing.");
+      setLocalError("Please approve at least 1 question before saving.");
       return;
     }
 
     if (!matchedNode) {
-      setLocalError("Please select a valid curriculum board, stream, and subject.");
+      setLocalError("Please select a valid curriculum board, class, and subject.");
       return;
     }
 
@@ -276,21 +277,21 @@ export function DestinationTopicModal({
           newTopicTitle.trim()
         );
         if (!createRes.success || !createRes.topicId) {
-          throw new Error(createRes.error || "Failed to create new topic on the fly.");
+          throw new Error(createRes.error || "Failed to create new topic.");
         }
         finalTopicId = createRes.topicId;
         finalChapterTitle = newChapterTitle.trim();
         finalTopicTitle = newTopicTitle.trim();
       }
 
-      // 2. Commit approved questions to database vault
+      // 2. Save approved questions to database vault
       const commitRes = await commitApprovedQuestionsAction(
         finalTopicId,
         stagedQuestions
       );
 
       if (!commitRes.success) {
-        throw new Error(commitRes.error || "Failed to commit questions.");
+        throw new Error(commitRes.error || "Failed to save questions.");
       }
 
       // 3. Update store context
@@ -316,8 +317,8 @@ export function DestinationTopicModal({
       // Redirect to the Question Bank subject vault!
       router.push(`/admin/question-bank/${matchedNode.id}`);
     } catch (err: any) {
-      console.error("Commit error:", err);
-      setLocalError(err.message || "Failed to commit questions to database vault.");
+      console.error("Save error:", err);
+      setLocalError(err.message || "Failed to save questions to question bank.");
     } finally {
       setIsCommitting(false);
     }
@@ -333,10 +334,10 @@ export function DestinationTopicModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-black font-display tracking-tight text-white">
-                Select Destination Curriculum Topic
+                Save Questions to Topic
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400">
-                Choose the exact Board, Subject, Chapter, and Topic to store these {approvedQuestions.length} approved MCQs.
+                Choose the Board, Subject, Chapter, and Topic where you would like to store these {approvedQuestions.length} approved questions.
               </DialogDescription>
             </div>
           </div>
@@ -377,7 +378,7 @@ export function DestinationTopicModal({
                       onClick={() => setSelectedClass(lvl)}
                       className={`flex-1 py-1.5 rounded-xl text-xs font-bold font-display uppercase transition-all cursor-pointer ${
                         selectedClass === lvl
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                          ? "bg-pgc-red/20 text-white border border-pgc-red/50 shadow-sm"
                           : "bg-black/50 text-slate-400 border border-white/10 hover:text-white"
                       }`}
                     >
@@ -392,17 +393,17 @@ export function DestinationTopicModal({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       Board:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableBoards.map((b) => ({
+                        value: b.id,
+                        label: b.name,
+                        badge: b.code,
+                      }))}
                       value={selectedBoardId}
-                      onChange={(e) => setSelectedBoardId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400/40"
-                    >
-                      {availableBoards.map((b) => (
-                        <option key={b.id} value={b.id} className="bg-[#0B0C16]">
-                          {b.name} ({b.code})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedBoardId(val)}
+                      placeholder="Select Board..."
+                      searchPlaceholder="Search boards..."
+                    />
                   </div>
 
                   {/* 3. Stream */}
@@ -410,17 +411,17 @@ export function DestinationTopicModal({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       Stream:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableDisciplines.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                        badge: d.code,
+                      }))}
                       value={selectedDisciplineId}
-                      onChange={(e) => setSelectedDisciplineId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400/40"
-                    >
-                      {availableDisciplines.map((d) => (
-                        <option key={d.id} value={d.id} className="bg-[#0B0C16]">
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedDisciplineId(val)}
+                      placeholder="Select Stream..."
+                      searchPlaceholder="Search streams..."
+                    />
                   </div>
 
                   {/* 4. Subject */}
@@ -428,17 +429,18 @@ export function DestinationTopicModal({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       Subject:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableSubjects.map((s) => ({
+                        value: s.id,
+                        label: s.name,
+                        badge: s.code,
+                      }))}
                       value={selectedSubjectId}
-                      onChange={(e) => setSelectedSubjectId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400/40"
-                    >
-                      {availableSubjects.map((s) => (
-                        <option key={s.id} value={s.id} className="bg-[#0B0C16]">
-                          {s.name} ({s.code})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedSubjectId(val)}
+                      placeholder="Select Subject..."
+                      searchPlaceholder="Search subjects..."
+                      align="end"
+                    />
                   </div>
                 </div>
               </div>
@@ -448,7 +450,7 @@ export function DestinationTopicModal({
           {/* Chapter & Topic Selector */}
           <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold font-display uppercase tracking-wider text-emerald-400">
+              <span className="text-xs font-bold font-display uppercase tracking-wider text-cyan-400">
                 Destination Unit &amp; Topic:
               </span>
               <button
@@ -503,12 +505,12 @@ export function DestinationTopicModal({
                 <span>Loading chapters &amp; topics...</span>
               </div>
             ) : chapters.length === 0 ? (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-center justify-between gap-2">
+              <div className="p-3 rounded-xl bg-pgc-red/10 border border-pgc-red/25 text-xs text-red-200 flex items-center justify-between gap-2">
                 <span>No chapters exist for this subject yet.</span>
                 <button
                   type="button"
                   onClick={() => setIsCreatingNew(true)}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 font-bold hover:bg-amber-500/30 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-pgc-red/20 text-white font-bold hover:bg-pgc-red/30 transition-colors cursor-pointer"
                 >
                   + Create Unit
                 </button>
@@ -520,17 +522,17 @@ export function DestinationTopicModal({
                   <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                     Chapter / Unit:
                   </label>
-                  <select
+                  <SearchableSelect
+                    options={chapters.map((c) => ({
+                      value: c.id,
+                      label: c.title,
+                      badge: `Ch ${c.chapter_number}`,
+                    }))}
                     value={selectedChapterId}
-                    onChange={(e) => setSelectedChapterId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400/40"
-                  >
-                    {chapters.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-[#0B0C16]">
-                        Ch {c.chapter_number}: {c.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedChapterId(val)}
+                    placeholder="Select Chapter..."
+                    searchPlaceholder="Search chapters..."
+                  />
                 </div>
 
                 {/* Topic Dropdown */}
@@ -539,19 +541,20 @@ export function DestinationTopicModal({
                     Topic:
                   </label>
                   {currentTopics.length > 0 ? (
-                    <select
+                    <SearchableSelect
+                      options={currentTopics.map((t) => ({
+                        value: t.id,
+                        label: t.title,
+                        badge: `${t.topic_number}`,
+                      }))}
                       value={selectedTopicId}
-                      onChange={(e) => setSelectedTopicId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-400/40"
-                    >
-                      {currentTopics.map((t) => (
-                        <option key={t.id} value={t.id} className="bg-[#0B0C16]">
-                          {t.topic_number}. {t.title}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedTopicId(val)}
+                      placeholder="Select Topic..."
+                      searchPlaceholder="Search topics..."
+                      align="end"
+                    />
                   ) : (
-                    <div className="text-xs text-slate-400 italic p-2">
+                    <div className="text-xs text-slate-400 italic p-2 rounded-xl bg-black/30 border border-white/5">
                       No topics in this chapter.
                     </div>
                   )}
@@ -574,17 +577,17 @@ export function DestinationTopicModal({
             <button
               type="submit"
               disabled={isCommitting || approvedQuestions.length === 0}
-              className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 hover:scale-[1.01]"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
             >
               {isCommitting ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Committing {approvedQuestions.length} MCQs...</span>
+                  <span>Saving {approvedQuestions.length} Questions...</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Confirm &amp; Commit {approvedQuestions.length} to Vault</span>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>Confirm &amp; Save {approvedQuestions.length} Questions</span>
                 </>
               )}
             </button>

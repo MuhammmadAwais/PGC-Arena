@@ -9,7 +9,10 @@ export async function getPdfPageCount(
   let arrayBuffer: ArrayBuffer;
 
   if (typeof fileOrUrl === "string") {
-    const res = await fetch(fileOrUrl);
+    const fetchUrl = fileOrUrl.startsWith("http")
+      ? `/api/library/proxy?url=${encodeURIComponent(fileOrUrl)}`
+      : fileOrUrl;
+    const res = await fetch(fetchUrl);
     if (!res.ok) throw new Error(`Failed to fetch PDF: ${res.statusText}`);
     arrayBuffer = await res.arrayBuffer();
   } else {
@@ -34,7 +37,10 @@ export async function slicePdfPages(
   if (fileOrUrl instanceof ArrayBuffer) {
     arrayBuffer = fileOrUrl;
   } else if (typeof fileOrUrl === "string") {
-    const res = await fetch(fileOrUrl);
+    const fetchUrl = fileOrUrl.startsWith("http")
+      ? `/api/library/proxy?url=${encodeURIComponent(fileOrUrl)}`
+      : fileOrUrl;
+    const res = await fetch(fetchUrl);
     if (!res.ok) throw new Error(`Failed to fetch PDF: ${res.statusText}`);
     arrayBuffer = await res.arrayBuffer();
   } else {

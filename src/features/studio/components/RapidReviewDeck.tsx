@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import {
   Check,
+  CheckCheck,
   X,
   Edit2,
   ChevronLeft,
@@ -23,11 +24,15 @@ export function RapidReviewDeck() {
     editingQuestionId,
     setEditingQuestionId,
     approveQuestion,
+    approveAllQuestions,
     discardQuestion,
     undoReview,
   } = useStudioStore();
 
   const activeQuestion = stagedQuestions[activeCardIndex];
+  const pendingCount = stagedQuestions.filter(
+    (q) => q.reviewStatus === "INBOX"
+  ).length;
 
   // ── Keyboard Shortcuts (Enter = Approve, Backspace = Discard, E = Edit, Arrows = Nav) ──
   useEffect(() => {
@@ -83,26 +88,46 @@ export function RapidReviewDeck() {
       id="rapid-review-deck"
       className="space-y-4 font-sans animate-in fade-in duration-300 scroll-mt-6"
     >
-      {/* ── Section Title ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <h2 className="text-sm font-bold font-display uppercase tracking-wider text-white">
-            Step 2: 60 FPS Rapid Review Deck
-          </h2>
+      {/* ── Section Title & Approve All CTA ───────────────────────── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/[0.02] border border-white/[0.08] p-4 rounded-2xl backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold font-display uppercase tracking-wider text-white">
+              Review Generated Questions
+            </h2>
+            <p className="text-xs text-slate-400 font-sans">
+              Review each question below, edit if needed, or approve them all to save.
+            </p>
+          </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-400 font-mono">
-          <span>Shortcuts:</span>
-          <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
-            Enter: Approve
-          </span>
-          <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
-            Backspace: Discard
-          </span>
-          <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
-            E: Edit
-          </span>
+        {/* Action Controls & Shortcuts */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-400 font-mono">
+            <span>Shortcuts:</span>
+            <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
+              Enter: Approve
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
+              Backspace: Discard
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-bold">
+              E: Edit
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={approveAllQuestions}
+            className="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
+            title="Approve all questions at once"
+          >
+            <CheckCheck className="w-4 h-4 text-emerald-400" />
+            <span>Approve All ({stagedQuestions.length})</span>
+          </button>
         </div>
       </div>
 

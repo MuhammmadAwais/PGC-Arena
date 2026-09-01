@@ -92,7 +92,7 @@ export default function RootLayout({
         </div>
         
         {/* Main content layer */}
-        <div className="flex flex-col flex-1 relative z-0">
+        <div className="flex flex-col flex-1 relative z-0" suppressHydrationWarning>
           {children}
         </div>
       </body>

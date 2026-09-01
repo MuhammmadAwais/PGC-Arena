@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type {
   LibraryBook,
   BookAssignmentPayload,
@@ -385,7 +386,7 @@ export function AssignCurriculumDrawer({
                         onClick={() => setSelectedClass(lvl)}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold font-display uppercase transition-all cursor-pointer ${
                           selectedClass === lvl
-                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
+                            ? "bg-pgc-red/20 text-white border border-pgc-red/50 shadow-sm"
                             : "bg-black/50 text-slate-400 border border-white/10 hover:text-white"
                         }`}
                       >
@@ -401,17 +402,17 @@ export function AssignCurriculumDrawer({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       2. Educational Board:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableBoards.map((b) => ({
+                        value: b.id,
+                        label: b.name,
+                        badge: b.code,
+                      }))}
                       value={selectedBoardId}
-                      onChange={(e) => setSelectedBoardId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400/40"
-                    >
-                      {availableBoards.map((b) => (
-                        <option key={b.id} value={b.id} className="bg-[#0B0C16]">
-                          {b.name} ({b.code})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedBoardId(val)}
+                      placeholder="Select Board..."
+                      searchPlaceholder="Search boards..."
+                    />
                   </div>
 
                   {/* 3. Discipline Selector (Only disciplines in selected Board & Class) */}
@@ -419,17 +420,17 @@ export function AssignCurriculumDrawer({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       3. Academic Stream:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableDisciplines.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                        badge: d.code,
+                      }))}
                       value={selectedDisciplineId}
-                      onChange={(e) => setSelectedDisciplineId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400/40"
-                    >
-                      {availableDisciplines.map((d) => (
-                        <option key={d.id} value={d.id} className="bg-[#0B0C16]">
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedDisciplineId(val)}
+                      placeholder="Select Stream..."
+                      searchPlaceholder="Search streams..."
+                    />
                   </div>
 
                   {/* 4. Subject Selector (Only subjects in selected Board + Class + Stream) */}
@@ -437,27 +438,28 @@ export function AssignCurriculumDrawer({
                     <label className="text-[10px] uppercase font-bold text-slate-400 font-display">
                       4. Subject:
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={availableSubjects.map((s) => ({
+                        value: s.id,
+                        label: s.name,
+                        badge: s.code,
+                      }))}
                       value={selectedSubjectId}
-                      onChange={(e) => setSelectedSubjectId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400/40"
-                    >
-                      {availableSubjects.map((s) => (
-                        <option key={s.id} value={s.id} className="bg-[#0B0C16]">
-                          {s.name} ({s.code})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setSelectedSubjectId(val)}
+                      placeholder="Select Subject..."
+                      searchPlaceholder="Search subjects..."
+                      align="end"
+                    />
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleAddAssignment}
-                  className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-cyan-500/15 border border-white/10 hover:border-cyan-400/40 text-xs font-bold font-display uppercase tracking-wider text-slate-200 hover:text-cyan-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                  className="w-full py-2.5 rounded-xl bg-white/[0.04] hover:bg-pgc-red/15 border border-white/10 hover:border-pgc-red/40 text-xs font-bold font-display uppercase tracking-wider text-slate-200 hover:text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Add This Syllabus Mapping</span>
+                  <Plus className="w-3.5 h-3.5 text-pgc-red" />
+                  <span>Add This Syllabus Mapping</span>
                 </button>
               </div>
             )}
@@ -482,16 +484,16 @@ export function AssignCurriculumDrawer({
                         <span className="font-bold text-white font-display">
                           {details.boardName}
                         </span>
-                        <span className="text-slate-500">•</span>
+                        <span className="text-white/20">•</span>
                         <span className="text-cyan-300 font-bold">
                           {details.subjectName}
                         </span>
-                        <span className="text-slate-500">•</span>
+                        <span className="text-white/20">•</span>
                         <span className="text-purple-300 text-[11px]">
                           {details.disciplineName}
                         </span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">
+                        <span className="text-white/20">•</span>
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-pgc-red/15 text-pgc-red border border-pgc-red/30">
                           Class {a.class_level || 11}
                         </span>
                       </div>

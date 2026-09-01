@@ -33,9 +33,9 @@ export function ReviewCard({ question, index, total }: ReviewCardProps) {
       case "EASY":
         return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
       case "MEDIUM":
-        return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+        return "bg-cyan-500/15 text-cyan-300 border-cyan-500/30";
       case "HARD":
-        return "bg-red-500/15 text-red-300 border-red-500/30";
+        return "bg-pgc-red/15 text-red-300 border-pgc-red/30";
       default:
         return "bg-white/[0.06] text-slate-300 border-white/10";
     }
@@ -77,8 +77,8 @@ export function ReviewCard({ question, index, total }: ReviewCardProps) {
             {question.cognitive_type}
           </span>
 
-          <span className="text-[10px] font-display font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1 font-mono">
-            <Timer className="w-3 h-3" />
+          <span className="text-[10px] font-display font-bold px-2 py-0.5 rounded-md bg-white/[0.06] text-slate-300 border border-white/10 flex items-center gap-1 font-mono">
+            <Timer className="w-3 h-3 text-cyan-400" />
             {question.time_limit_sec || 15}s
           </span>
         </div>
@@ -96,12 +96,12 @@ export function ReviewCard({ question, index, total }: ReviewCardProps) {
 
       {/* ── 2. Quality Linter Notice Banner ────────────────────────── */}
       {hasLinterFlags && (
-        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 space-y-1 animate-in fade-in duration-200">
-          <div className="flex items-center gap-1.5 font-bold font-display uppercase tracking-wider text-amber-400">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+        <div className="p-3.5 rounded-2xl bg-pgc-red/10 border border-pgc-red/30 text-xs text-red-200 space-y-1 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 font-bold font-display uppercase tracking-wider text-pgc-red">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-pgc-red" />
             <span>Automated Linter Notice:</span>
           </div>
-          <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-300/90 pl-1">
+          <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-300/90 pl-1">
             {question.linterReport.flags.map((flag, idx) => (
               <li key={idx}>{flag}</li>
             ))}

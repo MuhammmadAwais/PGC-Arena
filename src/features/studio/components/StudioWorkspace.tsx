@@ -69,6 +69,27 @@ export function StudioWorkspace() {
               topicTitle: activeTopic?.title || null,
             });
           }
+        } else {
+          // Reset stale context when entering without specific topic/node parameters
+          setContext({
+            nodeId: null,
+            boardId: null,
+            boardName: null,
+            boardCode: null,
+            disciplineId: null,
+            disciplineName: null,
+            classLevel: classLevel || 11,
+            subjectId: subjectId || null,
+            subjectName: null,
+            subjectCode: null,
+            subjectScript: "LATIN",
+            chapterId: null,
+            chapterNumber: null,
+            chapterTitle: null,
+            topicId: null,
+            topicNumber: null,
+            topicTitle: null,
+          });
         }
 
         // Fetch Digital Library books available for this subject or general

@@ -205,7 +205,7 @@ export function BookUploadDropzone({ onUploadSuccess }: BookUploadDropzoneProps)
 
             <div className="space-y-1.5">
               <p className="text-sm font-bold font-display uppercase tracking-wider text-white">
-                Uploading to Backblaze B2 ({uploadProgress}%)
+                Uploading to Digital Library ({uploadProgress}%)
               </p>
               <p className="text-xs text-slate-400 font-mono truncate">{currentFileName}</p>
             </div>
@@ -228,7 +228,7 @@ export function BookUploadDropzone({ onUploadSuccess }: BookUploadDropzoneProps)
                 Drag &amp; drop 50MB+ textbooks or click to browse
               </p>
               <p className="text-xs text-slate-400">
-                Direct presigned storage stream to Backblaze B2 repository with in-memory page indexing.
+                Securely uploads textbooks to the repository with automated page indexing.
               </p>
             </div>
 

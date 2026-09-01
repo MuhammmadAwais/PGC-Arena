@@ -22,7 +22,7 @@ export async function commitApprovedQuestionsAction(
     return {
       success: false,
       count: 0,
-      error: "Target topic ID is required for commit.",
+      error: "Target topic ID is required to save questions.",
     };
   }
 
@@ -31,7 +31,7 @@ export async function commitApprovedQuestionsAction(
     return {
       success: false,
       count: 0,
-      error: "No approved questions to commit.",
+      error: "No approved questions to save.",
     };
   }
 
@@ -64,11 +64,11 @@ export async function commitApprovedQuestionsAction(
     revalidatePath("/admin/question-bank");
     return { success: true, count: committedCount };
   } catch (err: any) {
-    console.error("Commit Questions Error:", err);
+    console.error("Save Questions Error:", err);
     return {
       success: false,
       count: 0,
-      error: err.message || "Failed to commit questions to database vault.",
+      error: err.message || "Failed to save questions to question bank.",
     };
   }
 }

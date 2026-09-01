@@ -43,6 +43,7 @@ interface StudioStoreState {
   ) => void;
   setStagedQuestions: (questions: StagedQuestion[]) => void;
   approveQuestion: (id: string) => void;
+  approveAllQuestions: () => void;
   discardQuestion: (id: string) => void;
   undoReview: (id: string) => void;
   updateStagedQuestion: (id: string, patch: Partial<StagedQuestion>) => void;
@@ -70,6 +71,7 @@ export const useStudioStore = create<StudioStoreState>()(
         classLevel: 11,
         subjectId: null,
         subjectName: null,
+        subjectCode: null,
         subjectScript: "LATIN",
         chapterId: null,
         chapterNumber: null,
@@ -185,6 +187,15 @@ export const useStudioStore = create<StudioStoreState>()(
             editingQuestionId: null,
           };
         });
+      },
+
+      approveAllQuestions: () => {
+        set((state) => ({
+          stagedQuestions: state.stagedQuestions.map((q) => ({
+            ...q,
+            reviewStatus: "APPROVED" as ReviewStatus,
+          })),
+        }));
       },
 
       discardQuestion: (id) => {

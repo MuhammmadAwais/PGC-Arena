@@ -153,7 +153,7 @@ export function SearchableSelect({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 top-full mt-1.5 w-full min-w-full rounded-2xl bg-[#0B0C16]/98 border border-white/15 p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 max-h-64 flex flex-col overflow-hidden",
+            "absolute z-50 top-full mt-1.5 min-w-[280px] sm:min-w-[320px] w-max max-w-[360px] rounded-2xl bg-[#0B0C16] border border-white/15 p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 max-h-72 flex flex-col overflow-hidden",
             align === "end" ? "right-0 left-auto" : "left-0",
             dropdownClassName
           )}
@@ -167,7 +167,7 @@ export function SearchableSelect({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-8.5 pl-8.5 pr-7 rounded-lg bg-white/[0.05] border border-white/10 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 focus:bg-white/[0.08] transition-colors"
+              className="w-full h-9 pl-9 pr-7 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/30 focus:bg-white/[0.08] transition-colors font-sans"
             />
             {searchQuery && (
               <button
@@ -181,7 +181,7 @@ export function SearchableSelect({
           </div>
 
           {/* Options List */}
-          <div className="overflow-y-auto space-y-1 flex-1 pr-1">
+          <div className="overflow-y-auto space-y-1 flex-1 pr-1 custom-scrollbar">
             {filteredOptions.length === 0 ? (
               <div className="py-6 px-3 text-center text-xs text-slate-400 font-sans">
                 {emptyMessage}
@@ -198,7 +198,7 @@ export function SearchableSelect({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full px-3 py-2 rounded-xl text-left flex items-center justify-between gap-2.5 transition-colors cursor-pointer text-xs",
+                      "w-full px-3 py-2.5 rounded-xl text-left flex items-center justify-between gap-3 transition-colors cursor-pointer text-xs group",
                       isSelected
                         ? "bg-white/15 text-white font-semibold"
                         : "hover:bg-white/[0.08] text-slate-200"
@@ -216,9 +216,11 @@ export function SearchableSelect({
                       ) : null}
 
                       <div className="min-w-0 flex-1">
-                        <span className="block font-medium text-white">{opt.label}</span>
+                        <span className="block font-medium text-white truncate font-sans">
+                          {opt.label}
+                        </span>
                         {opt.sublabel && (
-                          <span className="block text-[11px] text-slate-400 font-normal mt-0.5">
+                          <span className="block text-[11px] text-slate-400 font-normal mt-0.5 truncate font-sans">
                             {opt.sublabel}
                           </span>
                         )}
@@ -227,11 +229,11 @@ export function SearchableSelect({
 
                     <div className="flex items-center gap-2 shrink-0">
                       {opt.badge && (
-                        <span className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[10px] font-mono text-pgc-gold font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/10 text-[10px] font-mono text-slate-300 font-semibold">
                           {opt.badge}
                         </span>
                       )}
-                      {isSelected && <Check className="w-3.5 h-3.5 text-pgc-emerald shrink-0" />}
+                      {isSelected && <Check className="w-4 h-4 text-cyan-400 shrink-0" />}
                     </div>
                   </button>
                 );

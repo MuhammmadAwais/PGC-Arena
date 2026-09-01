@@ -275,6 +275,35 @@ export async function deleteBookAction(
 }
 
 /**
+ * Updates the cover thumbnail URL for an existing book.
+ */
+export async function updateBookThumbnailAction(
+  bookId: string,
+  thumbnailUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAuth(["SUPER_ADMIN", "TEACHER"]);
+  if (!auth.authorized) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    const { error } = await supabaseAdmin
+      .from("library_books")
+      .update({ thumbnail_url: thumbnailUrl })
+      .eq("id", bookId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/library");
+    revalidatePath("/admin/ai-creation");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Update Thumbnail Error:", err);
+    return { success: false, error: err.message || "Failed to update textbook cover." };
+  }
+}
+
+/**
  * Fetches all active Curriculum Nodes with joined Boards, Disciplines, and Subjects
  * to drive strictly validated cascading selections.
  */

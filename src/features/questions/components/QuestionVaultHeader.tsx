@@ -173,10 +173,10 @@ export function QuestionVaultHeader() {
           <button
             type="button"
             onClick={handleLaunchStudio}
-            className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold font-display uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-[1.02]"
+            className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 hover:border-white/30 text-white text-xs font-bold font-display uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.02] shadow-sm"
             title="Launch Question Studio AI Generator"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+            <Sparkles className="w-3.5 h-3.5 text-pgc-red" />
             <span>AI Studio</span>
           </button>
 
