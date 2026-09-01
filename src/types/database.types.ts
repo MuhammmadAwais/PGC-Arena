@@ -295,6 +295,108 @@ export type Database = {
           },
         ]
       }
+      library_books: {
+        Row: {
+          created_at: string
+          file_key: string
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          page_count: number | null
+          thumbnail_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          file_key: string
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          page_count?: number | null
+          thumbnail_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          file_key?: string
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          page_count?: number | null
+          thumbnail_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      book_assignments: {
+        Row: {
+          board_id: string | null
+          book_id: string
+          class_level: number | null
+          created_at: string
+          curriculum_node_id: string | null
+          discipline_id: string | null
+          id: string
+          subject_id: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          book_id: string
+          class_level?: number | null
+          created_at?: string
+          curriculum_node_id?: string | null
+          discipline_id?: string | null
+          id?: string
+          subject_id?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          book_id?: string
+          class_level?: number | null
+          created_at?: string
+          curriculum_node_id?: string | null
+          discipline_id?: string | null
+          id?: string
+          subject_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_assignments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "library_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_assignments_curriculum_node_id_fkey"
+            columns: ["curriculum_node_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_assignments_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_assignments_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_assignments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campuses: {
         Row: {
           banner_url: string | null

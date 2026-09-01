@@ -54,8 +54,13 @@ const navItems: NavItem[] = [
     icon: BookOpen,
   },
   {
+    href: "/admin/library",
+    label: "Digital Library",
+    icon: BookOpen,
+  },
+  {
     href: "/admin/ai-creation",
-    label: "AI Question Generator",
+    label: "AI Question Studio",
     icon: Sparkles,
   },
   {
